@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.csmc.client.movement.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "EntityAccessor",
+    "EntityMoveMixin",
+    "LivingEntityJumpMixin",
+    "LocalPlayerMixin",
+    "PlayerTravelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

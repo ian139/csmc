@@ -1,0 +1,4 @@
+{
+  "_reason": "Sniper role with cheap rifle ammunition (yield 16, AWP sniper ammo yields 8): armor ratio 1.5 instead of 1.95 so it no longer one-shots kevlar like the AWP. Pending playtest.",
+  "armor_ratio": 1.5
+}

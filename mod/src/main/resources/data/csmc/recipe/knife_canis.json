@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "M",
+    "K"
+  ],
+  "key": {
+    "M": {
+      "item": "minecraft:flint"
+    },
+    "K": [
+      {
+        "item": "csmc:knife"
+      },
+      {
+        "item": "csmc:knife_t"
+      }
+    ]
+  },
+  "result": {
+    "id": "csmc:knife_canis",
+    "count": 1
+  }
+}

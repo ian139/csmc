@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.csmc.client.grenade.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GrenadeFogRendererMixin",
+    "GrenadeInputMixin",
+    "GrenadeKeyEdgeMixin",
+    "GrenadeNameTagMixin",
+    "GrenadeSoundEngineAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

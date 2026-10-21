@@ -1,0 +1,43 @@
+{
+  "id": "csmc:glock",
+  "display_name": "Glock-18",
+  "damage": 30,
+  "cycle_time_s": 0.15,
+  "magazine_size": 20,
+  "reserve_ammo": 120,
+  "reload_time_s": 2.3,
+  "deploy_time_s": 1.0,
+  "range": 4096,
+  "range_modifier": 0.85,
+  "penetration_power": 1.0,
+  "penetration_count": 4,
+  "penetration_distance": 90,
+  "armor_ratio": 0.95,
+  "armor_bonus": 0.5,
+  "headshot_multiplier": 4.0,
+  "pellets": 1,
+  "max_speed": 240,
+  "spread_base": 0.002,
+  "inaccuracy": {
+    "stand": 0.0055,
+    "crouch": 0.004,
+    "move": 0.01,
+    "jump": 0.25,
+    "land": 0.04,
+    "ladder": 0.1,
+    "fire": 0.055
+  },
+  "recovery": {
+    "stand": 0.2,
+    "crouch": 0.16
+  },
+  "recoil": {
+    "angle": 0.0,
+    "angle_variance": 20.0,
+    "magnitude": 18.0,
+    "magnitude_variance": 0.0,
+    "seed": 18
+  },
+  "automatic": false,
+  "ammo_type": "pistol"
+}

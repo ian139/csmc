@@ -1,0 +1,47 @@
+{
+  "id": "csmc:ak47",
+  "display_name": "AK-47",
+  "damage": 36,
+  "cycle_time_s": 0.1,
+  "magazine_size": 30,
+  "reserve_ammo": 90,
+  "reload_time_s": 2.4,
+  "deploy_time_s": 1.0,
+  "range": 8192,
+  "range_modifier": 0.98,
+  "penetration_power": 2.0,
+  "penetration_count": 4,
+  "penetration_distance": 90,
+  "armor_ratio": 1.5,
+  "armor_bonus": 0.5,
+  "headshot_multiplier": 4.0,
+  "pellets": 1,
+  "max_speed": 215,
+  "spread_base": 0.0006,
+  "inaccuracy": {
+    "stand": 0.0065,
+    "crouch": 0.005,
+    "move": 0.17,
+    "jump": 0.14,
+    "land": 0.03,
+    "ladder": 0.14,
+    "fire": 0.008
+  },
+  "recovery": {
+    "stand": 0.37,
+    "crouch": 0.3,
+    "stand_final": 0.5,
+    "crouch_final": 0.42,
+    "start_bullet": 2,
+    "end_bullet": 6
+  },
+  "recoil": {
+    "angle": 0.0,
+    "angle_variance": 70.0,
+    "magnitude": 30.0,
+    "magnitude_variance": 0.0,
+    "seed": 47
+  },
+  "automatic": true,
+  "ammo_type": "rifle"
+}

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "M",
+    "K"
+  ],
+  "key": {
+    "M": {
+      "item": "minecraft:string"
+    },
+    "K": [
+      {
+        "item": "csmc:knife"
+      },
+      {
+        "item": "csmc:knife_t"
+      }
+    ]
+  },
+  "result": {
+    "id": "csmc:knife_cord",
+    "count": 1
+  }
+}

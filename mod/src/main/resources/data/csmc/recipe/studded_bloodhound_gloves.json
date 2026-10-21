@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "L L",
+    "LXL"
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "X": {
+      "item": "minecraft:gold_nugget"
+    }
+  },
+  "result": {
+    "id": "csmc:studded_bloodhound_gloves",
+    "count": 1
+  }
+}

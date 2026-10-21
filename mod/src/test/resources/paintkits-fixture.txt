@@ -1,0 +1,15 @@
+// Entirely self-authored parser fixture; no exported Valve content.
+"items_game"
+{
+    "paint_kits"
+    {
+        "0" { "name" "default" "style" "0" "wear_remap_min" "0.06" "wear_remap_max" "0.8" }
+        "41" { "name" "cu_practice" "style" "7" "wear_remap_min" "0.1" "wear_remap_max" "0.7" "use_legacy_model" "1" "description_tag" "#Practice_\"Tag\"" }
+    }
+    "client_loot_lists" { "practice_case" { "[cu_practice]weapon_practice" "1" "[so_example]weapon_practice" "1" } }
+    "item_sets" { "practice_set" { "items" { "[cu_practice]weapon_practice" "1" "[cu_practice]weapon_trainer" "1" } } }
+    "paint_kits"
+    {
+        "42" { "name" "so_example" "style" "1" "composite_material_path" "weapons/paints/self_authored/example.vcompmat" }
+    }
+}

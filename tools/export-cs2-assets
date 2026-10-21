@@ -1,0 +1,1126 @@
+#!/usr/bin/env python3
+"""Export personally owned CS2 resources into csmc's external cache (Python 3 stdlib)."""
+import argparse
+import datetime
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+import time
+from urllib.parse import unquote, urlsplit
+
+
+def save_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + '.tmp')
+    temporary.write_text(json.dumps(value, indent=2) + '\n')
+    temporary.replace(path)
+
+
+def blocks(text):
+    """Read top-level KV3 objects, balancing braces outside strings/comments."""
+    text = re.sub(r'<!--.*?-->', '', text, flags=re.S)
+    tokens = list(re.finditer(r'"(?:\\.|[^"\\])*"|//[^\n]*|[^\s{}=\[\],:]+|[{}=\[\],:]', text))
+    depth, key, start = 0, None, None
+    result = {}
+    for index, token in enumerate(tokens):
+        value = token.group()
+        if value.startswith('//'):
+            continue
+        if value == '{':
+            if depth == 1 and index >= 2 and tokens[index - 1].group() == '=':
+                key = tokens[index - 2].group().strip('"')
+                start = token.end()
+            depth += 1
+        elif value == '}':
+            depth -= 1
+            if depth == 1 and key is not None:
+                result[key] = text[start:token.start()]
+                key = None
+    return result
+
+
+def string_fields(body):
+    return dict(re.findall(r'([\w]+)\s*=\s*(?:[\w]+:)?"([^"\n]*)"', body))
+
+
+def validate_gltf(path):
+    model = json.loads(path.read_text())
+    required = model.get('extensionsRequired', [])
+    unsupported = set(required) - {'KHR_mesh_quantization'}
+    if unsupported:
+        raise ValueError('unsupported required extensions: ' + ', '.join(sorted(unsupported)))
+    buffers = []
+    for kind in ('buffers', 'images'):
+        for entry in model.get(kind, []):
+            uri = entry.get('uri', '')
+            if uri.startswith('data:'):
+                raise ValueError('expected external .bin / PNG sidecars')
+            parsed = urlsplit(uri)
+            target = (path.parent / unquote(parsed.path)).resolve()
+            if parsed.scheme or parsed.netloc or not target.is_relative_to(path.parent.resolve()):
+                raise ValueError('sidecar escapes model directory: ' + uri)
+            if not target.is_file():
+                raise ValueError('missing sidecar: ' + uri)
+            if kind == 'images' and (target.suffix.lower() != '.png' or target.read_bytes()[:8] != b'\x89PNG\r\n\x1a\n'):
+                raise ValueError('texture must be PNG: ' + uri)
+            if kind == 'buffers':
+                buffers.append(target.read_bytes())
+    maximum = 0
+    for mesh in model.get('meshes', []):
+        for primitive in mesh.get('primitives', []):
+            attributes = primitive.get('attributes', {})
+            if 'POSITION' not in attributes:
+                raise ValueError('compressed/absent POSITION attribute')
+            if any(key.startswith(('JOINTS_', 'WEIGHTS_')) and not key.endswith('_0') for key in attributes):
+                raise ValueError('more than four skin influence slots')
+            if 'WEIGHTS_0' not in attributes:
+                continue
+            accessor = model['accessors'][attributes['WEIGHTS_0']]
+            if accessor.get('type') != 'VEC4' or 'sparse' in accessor:
+                raise ValueError('unsupported skin weight accessor')
+            view = model['bufferViews'][accessor['bufferView']]
+            fmt, width = {5121: ('B', 1), 5123: ('H', 2), 5126: ('f', 4)}[accessor['componentType']]
+            offset = view.get('byteOffset', 0) + accessor.get('byteOffset', 0)
+            stride = view.get('byteStride', width * 4)
+            data = buffers[view['buffer']]
+            for vertex in range(accessor['count']):
+                weights = struct.unpack_from('<' + fmt * 4, data, offset + vertex * stride)
+                maximum = max(maximum, sum(weight > 0 for weight in weights))
+    clips = [clip.get('name', '') for clip in model.get('animations', [])]
+    return {'clips': clips, 'required_extensions': required, 'max_skin_influences': maximum,
+            'meshes': [mesh.get('name', '') for mesh in model.get('meshes', [])],
+            'nodes': [node.get('name', '') for node in model.get('nodes', [])]}
+
+
+ACTION_CLIPS = {'fire': ('shoot',), 'reload': ('reload',), 'draw': ('draw', 'deploy'),
+                'inspect': ('inspect', 'inventory_inspect')}
+
+
+def animation_map(clips):
+    return {action: next(c for c in names if c in clips)
+            for action, names in ACTION_CLIPS.items() if any(c in clips for c in names)}
+
+
+SCOPE_SOUND_EVENTS = {
+    'awp': {'Weapon_AWP.Zoom': 'zoom_in', 'Weapon_AWP.ZoomOut': 'zoom_out'},
+    # Use the canonical ZoomOut event, not SSG08 vdata's duplicate Zoom binding.
+    'ssg08': {'Weapon_SSG08.Zoom': 'zoom_in', 'Weapon_SSG08.ZoomOut': 'zoom_out'},
+}
+
+
+def scope_sounds_complete(cache, record, weapon):
+    """Older same-source firearm records need only an audio refresh for scope actions."""
+    expected = SCOPE_SOUND_EVENTS.get(weapon)
+    if not expected:
+        return True
+    try:
+        sounds = json.loads((cache / record['sounds_manifest']).read_text())
+        for event, action in expected.items():
+            entry = sounds['events'][event]
+            if entry['action'] != action or not entry['files']:
+                return False
+            for file in entry['files']:
+                if file not in sounds['actions'][action] or not (cache / 'sounds' / weapon / file).is_file():
+                    return False
+        return True
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
+def export_arms(cache, manifest_path, fingerprint, run):
+    """Export first-person arm parts to models/arms/<part>/ and write only manifest['arms']."""
+    import cs2_arms
+    begin = time.monotonic()
+    clip_dir = cache / cs2_arms.CLIP_REFERENCE
+    clip_files = sorted(clip_dir.glob('*.gltf')) if clip_dir.is_dir() else []
+    if not clip_files:
+        raise RuntimeError('run --knives first: no clip glTFs under ' + str(clip_dir))
+    clip_names = set(validate_gltf(clip_files[0])['nodes'])
+    record = {'status': 'in_progress', 'source': fingerprint, 'parts': {}, 'errors': []}
+    # Re-read the on-disk index: this mode must not rewrite other modes' keys or records.
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    manifest['arms'] = record
+    save_json(manifest_path, manifest)
+    root = cache / 'models' / 'arms'
+    for part, spec in cs2_arms.PARTS.items():
+        destination = root / part
+        destination.mkdir(parents=True, exist_ok=True)
+        filename = part + '.gltf'
+        try:
+            with tempfile.TemporaryDirectory(prefix='.export-', dir=destination) as work:
+                output = Path(work) / filename
+                # Skins are only written with animations enabled; the filter matches none.
+                try:
+                    run(['--vpk_filepath', spec['source'], '-d', '--gltf_export_format', 'gltf', '--gltf_export_materials',
+                         '--gltf_export_animations', '--gltf_animation_list', '__no_animations__',
+                         '--gltf_mesh_list', ','.join(spec['meshes']), '--gltf_textures_adapt', '-o', str(output)], 'arms-' + part)
+                    chunks = []
+                except RuntimeError as error:
+                    # Absent numbered chunks (agent animation groups, some textures) are reported, not fatal,
+                    # as long as the published glTF and every sidecar it references validate.
+                    chunks = cs2_arms.missing_chunks(str(error))
+                    if not chunks or not output.is_file():
+                        raise
+                validate_gltf(output)
+                model = json.loads(output.read_text())
+                meshes = cs2_arms.skin_report(model, clip_names)
+                missing = set(spec['meshes']) - meshes.keys()
+                if missing:
+                    raise ValueError('skinned mesh nodes absent: ' + ', '.join(sorted(missing)))
+                # Publish only the model and its sidecars (the CLI also writes an unused physics glTF).
+                for name in [filename] + cs2_arms.sidecars(model):
+                    (Path(work) / name).replace(destination / name)
+            for name, role in spec['meshes'].items():
+                meshes[name]['role'] = role
+            record['parts'][part] = {'file': str((destination / filename).relative_to(cache)), 'source': spec['source'],
+                                     'team': spec['team'], 'meshes': meshes, 'missing_chunks': chunks}
+            print('arms ' + part + ': ' + ', '.join(name + ' ' + str(mesh['matched_joints']) + '/' + str(len(mesh['joints']))
+                                                    for name, mesh in meshes.items()), flush=True)
+        except (OSError, ValueError, RuntimeError, KeyError, struct.error) as error:
+            record['errors'].append(part + ': ' + str(error))
+    record['default'] = cs2_arms.DEFAULTS
+    record['clip_reference'] = str(clip_files[0].relative_to(cache))
+    record['clip_joint_count'] = len(clip_names)
+    record['retarget'] = cs2_arms.RETARGET_NOTE
+    record['status'] = 'failed' if record['errors'] else 'ok'
+    record['elapsed_seconds'] = round(time.monotonic() - begin, 3)
+    save_json(manifest_path, manifest)
+    print(json.dumps({'arms': record['status'], 'parts': len(record['parts']), 'errors': record['errors']}, indent=2))
+    return 1 if record['errors'] else 0
+
+def gun_clip_context(vpk, run):
+    """Decompile every gun viewmodel graph once: graph key -> referenced clip resources, plus VPK clip folders."""
+    import cs2_guns
+    from cs2_skins import Vpk
+    entries = Vpk(vpk).entries
+    folders = {}
+    for source in entries:
+        if source.startswith(cs2_guns.CLIP_ROOT) and source.endswith('.vnmclip_c'):
+            folders.setdefault(cs2_guns.folder_of(source[:-2]), []).append(source[:-2])
+    graphs = cs2_guns.graph_variations(entries)
+    texts = {}
+    with tempfile.TemporaryDirectory(prefix='csmc-graphs-') as work:
+        def dump(paths, log):
+            run(['--vpk_filepath', ','.join(paths), '-d', '-o', work + os.sep], log)
+            return {path: (Path(work) / path[:-2]).read_text() for path in paths}
+        texts.update(dump(sorted(graphs.values()), 'gun-graphs'))
+        linked = sorted({ref + '_c' for text in texts.values() for ref in cs2_guns.GRAPH_REFERENCE.findall(text)
+                         if ref + '_c' in entries and ref + '_c' not in texts})
+        if linked:
+            texts.update(dump(linked, 'gun-inspect-graphs'))
+    graph_refs = {key: [texts[path]] + [texts[ref + '_c'] for ref in cs2_guns.GRAPH_REFERENCE.findall(texts[path])
+                                        if ref + '_c' in texts and ref + '_c' != path]
+                  for key, path in graphs.items()}
+    per_graph = [set(cs2_guns.CLIP_REFERENCE.findall(text[0])) for text in graph_refs.values()]
+    shared = cs2_guns.shared_clips(per_graph)
+    return {'entries': entries, 'folders': folders, 'graphs': graphs, 'graph_texts': graph_refs, 'shared': shared}
+
+
+def export_gun_clips(weapon, fields, record, context, cache, run, persist):
+    """Export a firearm's CS2 viewmodel clips to models/<weapon>/clips and add viewmodel_* keys to its record.
+
+    `persist()` durably saves the record; it runs with `viewmodel_status = in_progress` before any clip file is
+    replaced or deleted, so an interrupted export is never mistaken for a complete one.
+    """
+    import cs2_arms
+    import cs2_guns
+    skeleton = fields.get('m_szAnimSkeleton')
+    world = fields.get('m_szWorldModel')
+    names = [weapon, Path(skeleton).stem if skeleton else None, Path(world).parent.name if world else None]
+    graph = cs2_guns.resolve_graph(names, context['graphs'])
+    if graph:
+        resources = cs2_guns.graph_clips(context['graph_texts'][graph], context['shared'])
+        resolution = 'graph:' + context['graphs'][graph][:-2]
+    else:
+        folder = cs2_guns.fallback_folder(weapon, fields.get('m_WeaponType'), context['folders'])
+        resources = sorted(context['folders'].get(folder, []))
+        resolution = ('folder:' if folder and '_default_' not in folder else 'default:') + str(folder)
+    absent = [resource + '_c' for resource in resources if resource + '_c' not in context['entries']]
+    resources = [resource for resource in resources if resource + '_c' in context['entries']]
+    folders = sorted({cs2_guns.folder_of(resource) for resource in resources})
+    record.update({'viewmodel_status': 'in_progress', 'viewmodel_clip_resolution': resolution, 'viewmodel_anim_skeleton': skeleton,
+                   'viewmodel_clip_folder': [cs2_guns.CLIP_ROOT + folder for folder in folders],
+                   'viewmodel_clips': {}, 'viewmodel_animations': {}, 'viewmodel_unmapped_clips': [],
+                   'viewmodel_missing_actions': [], 'viewmodel_missing_chunks': [],
+                   'viewmodel_absent_resources': absent, 'viewmodel_skeleton': {},
+                   'viewmodel_notes': cs2_guns.notes(weapon, resolution), 'viewmodel_errors': []})
+    errors = record['viewmodel_errors']
+    persist()
+    if not resources:
+        errors.append('no viewmodel clips resolved (' + resolution + ')')
+        record['viewmodel_missing_actions'] = cs2_guns.missing_actions(weapon, {})
+        record['viewmodel_status'] = 'failed'
+        return
+    world_nodes = record.get('models', {}).get('world', {}).get('nodes', [])
+    clips_dir = cache / 'models' / weapon / 'clips'
+    clips_dir.mkdir(parents=True, exist_ok=True)
+    clips, skeletons, published = {}, {}, set()
+    try:
+        with tempfile.TemporaryDirectory(prefix='.clips-', dir=clips_dir) as work:
+            try:
+                run(['--vpk_filepath', ','.join(resource + '_c' for resource in resources), '-d',
+                     '--gltf_export_format', 'gltf', '--gltf_export_animations', '-o', work + os.sep], weapon + '-viewmodel-clips')
+            except RuntimeError as error:
+                chunks = cs2_arms.missing_chunks(str(error))
+                if not chunks:
+                    raise
+                record['viewmodel_missing_chunks'] = chunks
+            for resource in resources:
+                name = cs2_guns.clip_name(resource)
+                exported = Path(work) / (resource[:-len('.vnmclip')] + '.gltf')
+                try:
+                    details = validate_gltf(exported)
+                    model = json.loads(exported.read_text())
+                except (OSError, ValueError, KeyError, struct.error) as error:
+                    errors.append(name + ': ' + str(error))
+                    continue
+                report = cs2_guns.skeleton_report(model, world_nodes)
+                skeletons[report['skeleton']] = report
+                files = [exported.name] + cs2_arms.sidecars(model)
+                for file in files:
+                    (exported.parent / file).replace(clips_dir / file)
+                published.update(files)
+                clips[name] = {'file': str((clips_dir / exported.name).relative_to(cache)),
+                               'animation': details['clips'][0] if details['clips'] else None,
+                               'source': resource + '_c', 'duration_seconds': cs2_guns.duration(model),
+                               'weapon_skeleton': report['skeleton']}
+            # clips/ belongs to this export alone: drop files for clips the selection no longer names.
+            selected = {cs2_guns.clip_name(resource) for resource in resources}
+            existing = [path.name for path in clips_dir.iterdir() if path.is_file()]
+            for name in cs2_guns.prune_candidates(existing, selected, bool(errors)):
+                (clips_dir / name).unlink()
+    except (OSError, RuntimeError) as error:
+        errors.append('viewmodel clips: ' + str(error))
+    actions, unmapped = cs2_guns.action_map(clips, weapon)
+    record['viewmodel_clips'] = clips
+    record['viewmodel_animations'] = actions
+    record['viewmodel_unmapped_clips'] = unmapped
+    record['viewmodel_missing_actions'] = cs2_guns.missing_actions(weapon, actions)
+    record['viewmodel_status'] = cs2_guns.viewmodel_status(errors, record['viewmodel_missing_actions'])
+    expected = skeleton[:-len('.vnmskel')] + '.vnmskel' if skeleton else None
+    record['viewmodel_skeleton'] = {
+        'world_nodes_checked': bool(world_nodes),
+        'clip_skeletons': {name: {key: value for key, value in report.items() if key != 'skeleton'}
+                           for name, report in skeletons.items()},
+        'matches_vdata': expected in skeletons if expected else None}
+
+
+def export_gun_clips_mode(cache, manifest_path, vpk, run, weapons, selected):
+    """--gun-clips: add viewmodel clip keys to existing firearm records; never touch other keys or records."""
+    begin = time.monotonic()
+    context = gun_clip_context(vpk, run)
+    summary = {}
+    for weapon in selected:
+        manifest = json.loads(manifest_path.read_text())
+        record = manifest['weapons'].get(weapon)
+        if record is None:
+            summary[weapon] = 'no firearm record; run the normal export first'
+            continue
+        fields = weapons[weapon]
+
+        def persist():
+            # Re-read so a concurrent writer's other records survive; replace only this record's viewmodel_* keys.
+            manifest = json.loads(manifest_path.read_text())
+            manifest['weapons'][weapon].update({key: value for key, value in record.items() if key.startswith('viewmodel_')})
+            save_json(manifest_path, manifest)
+
+        export_gun_clips(weapon, fields, record, context, cache, run, persist)
+        persist()
+        summary[weapon] = {'status': record['viewmodel_status'], 'clips': len(record['viewmodel_clips']),
+                           'actions': len(record['viewmodel_animations']),
+                           'missing_actions': record['viewmodel_missing_actions'],
+                           'unmapped': record['viewmodel_unmapped_clips'], 'errors': record['viewmodel_errors'],
+                           'missing_chunks': record['viewmodel_missing_chunks']}
+        print(weapon + ': ' + json.dumps(summary[weapon]), flush=True)
+    print(json.dumps({'gun_clips': len(selected), 'elapsed_seconds': round(time.monotonic() - begin, 3)}))
+    return 1 if any(isinstance(value, str) or value['status'] != 'ok' for value in summary.values()) else 0
+
+
+def export_gloves(cache, manifest_path, fingerprint, run, vpk_path):
+    """--gloves: glove viewmodel meshes to models/gloves/<id>/, baked finishes to skins/<id>/<paint_kit>/.
+
+    Writes only manifest['gloves'], glove kit entries in skins/index.json and the glove directories.
+    """
+    import hashlib
+    import cs2_arms
+    import cs2_gloves
+    from cs2_skins import Vpk, parse_kv
+    try:
+        import numpy  # noqa: F401  (glove finish bake)
+        from PIL import Image  # noqa: F401
+    except ImportError as error:
+        raise SystemExit('error: --gloves needs numpy and Pillow for the finish bake; install them with '
+                         '`python3 -m pip install numpy Pillow` and rerun. Nothing was changed.') from error
+    begin = time.monotonic()
+    vpk = Vpk(vpk_path)
+    game_file = cache / 'data/items_game.txt'
+    if not game_file.is_file():
+        raise RuntimeError('run --skins first: ' + str(game_file) + ' is absent')
+    game = parse_kv(game_file.read_text(encoding='utf-8-sig'))['items_game']
+    clip_dir = cache / cs2_arms.CLIP_REFERENCE
+    clip_files = sorted(clip_dir.glob('*.gltf')) if clip_dir.is_dir() else []
+    if not clip_files:
+        raise RuntimeError('run --knives first: no clip glTFs under ' + str(clip_dir))
+    clip_names = set(validate_gltf(clip_files[0])['nodes'])
+    gloves = cs2_gloves.resolve_gloves(game['items'])
+    kits = {kit['name'].lower(): dict(kit, paint_kit=int(ident)) for ident, kit in game['paint_kits'].items()
+            if ident.isdigit() and isinstance(kit, dict) and 'name' in kit}
+    pairs = cs2_gloves.icon_pairs(vpk.entries, kits.keys())
+    missing_chunks, errors = set(), []
+    records = {glove: {'status': 'in_progress', 'source': fingerprint, 'item_defindex': info['defindex'],
+                       'model_source': info['model'] + '_c', 'finishes': [], 'missing_finishes': {}, 'errors': []}
+               for glove, info in gloves.items()}
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    manifest['gloves'] = records
+    save_json(manifest_path, manifest)
+    for glove in set(cs2_gloves.GLOVE_IDS) - gloves.keys():
+        errors.append(glove + ': absent from items_game')
+
+    # Meshes: same CLI options, joint report and anchors as --arms parts.
+    for glove, record in records.items():
+        destination = cache / 'models' / 'gloves' / glove
+        destination.mkdir(parents=True, exist_ok=True)
+        filename = glove + '.gltf'
+        try:
+            with tempfile.TemporaryDirectory(prefix='.export-', dir=destination) as work:
+                output = Path(work) / filename
+                chunks = []
+                try:
+                    run(['--vpk_filepath', record['model_source'], '-d', '--gltf_export_format', 'gltf', '--gltf_export_materials',
+                         '--gltf_export_animations', '--gltf_animation_list', '__no_animations__',
+                         '--gltf_mesh_list', 'viewmodel', '--gltf_textures_adapt', '-o', str(output)], 'gloves-' + glove)
+                except RuntimeError as error:
+                    chunks = cs2_arms.missing_chunks(str(error))
+                    if not chunks or not output.is_file():
+                        raise
+                model = json.loads(output.read_text())
+                # A glove's own default textures may sit in absent chunks; the finish textures replace them.
+                absent = [uri for uri in cs2_arms.sidecars(model) if not (Path(work) / unquote(uri)).is_file()]
+                if absent and chunks:
+                    record['dropped_images'] = cs2_gloves.drop_images(model, set(absent))
+                    output.write_text(json.dumps(model, indent=2))
+                validate_gltf(output)
+                model = json.loads(output.read_text())
+                meshes = cs2_arms.skin_report(model, clip_names)
+                if 'viewmodel' not in meshes:
+                    raise ValueError('skinned viewmodel mesh node absent')
+                for name in [filename] + cs2_arms.sidecars(model):
+                    (Path(work) / name).replace(destination / name)
+            meshes = {'viewmodel': dict(meshes['viewmodel'], role='arms_gloves')}
+            glove_mats, bare_mats = cs2_gloves.glove_materials(meshes['viewmodel']['materials'])
+            record.update({'file': str((destination / filename).relative_to(cache)), 'meshes': meshes,
+                           'glove_materials': glove_mats, 'bare_arm_materials': bare_mats, 'missing_chunks': chunks})
+            missing_chunks.update(chunks)
+            print('gloves ' + glove + ': viewmodel ' + str(meshes['viewmodel']['matched_joints']) + '/'
+                  + str(len(meshes['viewmodel']['joints'])) + ' joints', flush=True)
+        except (OSError, ValueError, RuntimeError, KeyError, struct.error) as error:
+            record['errors'].append('model: ' + str(error))
+        save_json(manifest_path, {**json.loads(manifest_path.read_text()), 'gloves': records})
+
+    # Finish materials: VMAT/VCOMPMAT data blocks, cached like --skins (skins/_sources).
+    skins = cache / 'skins'
+    source_dir = skins / '_sources'
+    source_dir.mkdir(parents=True, exist_ok=True)
+    docs = {}
+
+    def cached_name(source, folder, suffix):
+        return folder / (hashlib.sha256((source + str(vpk.entries[source][1])).encode()).hexdigest()[:24] + suffix)
+
+    def present(source):
+        if source not in vpk.entries:
+            return False
+        if not vpk.present(source):
+            missing_chunks.add(vpk.chunk(source).name)
+            return False
+        return True
+
+    def load_docs(sources):
+        pending = []
+        for source in sorted(set(sources)):
+            if source in docs or not present(source):
+                continue
+            path = cached_name(source, source_dir, '.json')
+            if path.is_file():
+                docs[source] = json.loads(path.read_text())
+            else:
+                pending.append((source, path))
+        for start in range(0, len(pending), 80):
+            group = dict(pending[start:start + 80])
+            text = run(['--vpk_filepath', ','.join(group), '-b', 'DATA'], 'gloves-data-' + str(start))
+            parts = re.split(r'(?m)^\[\d+/\d+\] (\S+)\s*$', text)
+            for index in range(1, len(parts), 2):
+                source, body = parts[index], parts[index + 1]
+                marker = body.find('<!-- kv3')
+                if source in group and marker >= 0:
+                    docs[source] = parse_kv(body[marker:], kv3=True)
+                    save_json(group[source], docs[source])
+
+    chosen = {}
+    for glove, names in pairs.items():
+        for name in names:
+            candidates = cs2_gloves.paint_candidates(kits[name])
+            chosen[name] = next((c for c in candidates if c in vpk.entries), candidates[0])
+    load_docs(chosen.values())
+    paints = {}
+    for name, source in chosen.items():
+        paint = cs2_gloves.composite_paint(docs[source]) if source.endswith('.vcompmat_c') and source in docs else source
+        paints[name] = paint
+    load_docs(p for p in paints.values() if p)
+    layouts = {name: cs2_gloves.material_layout(cs2_gloves.material_values(docs[paint]))
+               for name, paint in paints.items() if paint in docs}
+    textures = skins / '_textures'
+    textures.mkdir(exist_ok=True)
+    decoded, pending = {}, []
+    for source in sorted({t + '_c' for layout in layouts.values() if layout for t in cs2_gloves.layout_textures(layout)}):
+        if not present(source):
+            continue
+        target = cached_name(source, textures, '.png')
+        target = target.with_name('raw_' + target.name)
+        if target.is_file():
+            decoded[source[:-2]] = target
+        else:
+            pending.append((source, target))
+    with tempfile.TemporaryDirectory(prefix='.decode-', dir=skins) as work:
+        for start in range(0, len(pending), 100):
+            group = pending[start:start + 100]
+            try:
+                run(['--vpk_filepath', ','.join(s for s, _ in group), '-d', '--texture_decode_flags', 'ForceLDR',
+                     '-o', work + os.sep], 'gloves-textures-' + str(start))
+            except RuntimeError as error:
+                errors.append('texture decode: ' + str(error)[:300])
+            for source, target in group:
+                exported = (Path(work) / source).with_suffix('.png')
+                if exported.is_file():
+                    exported.replace(target)
+                    decoded[source[:-2]] = target
+
+    import numpy
+    from PIL import Image
+    images = {}
+
+    def load(vtex):
+        if vtex not in decoded:
+            return None
+        if vtex not in images:
+            images[vtex] = numpy.asarray(Image.open(decoded[vtex]).convert('RGBA'))
+        return images[vtex]
+
+    rarity = game.get('paint_kits_rarity', {})
+    glove_kits = {}
+    for glove, names in pairs.items():
+        if glove not in records:
+            continue
+        record = records[glove]
+        for name in names:
+            kit = kits[name]
+            directory = skins / glove / str(kit['paint_kit'])
+            layout = layouts.get(name)
+            missing = ([] if layout else ['paint material ' + str(paints.get(name) or chosen[name])])
+            degraded = []
+            if layout:
+                missing += [t + '_c' for t in cs2_gloves.required_missing(layout, decoded)]
+                degraded = [t + '_c' for t in cs2_gloves.degraded_inputs(layout, decoded)]
+            outputs = {}
+            if not missing:
+                try:
+                    directory.mkdir(parents=True, exist_ok=True)
+                    color = cs2_gloves.bake_color(layout, load)
+                    Image.fromarray(color, 'RGB').save(directory / 'color.png.new', format='PNG')
+                    (directory / 'color.png.new').replace(directory / 'color.png')
+                    outputs['color'] = 'color.png'
+                    if layout['normal'] in decoded:
+                        normal = cs2_gloves.normal_rgb(load(layout['normal']))
+                        Image.fromarray(normal, 'RGB').save(directory / 'normal.png.new', format='PNG')
+                        (directory / 'normal.png.new').replace(directory / 'normal.png')
+                        outputs['normal'] = 'normal.png'
+                except (OSError, ValueError, KeyError) as error:
+                    missing.append('bake: ' + str(error))
+            available = not missing and 'color' in outputs
+            directory.mkdir(parents=True, exist_ok=True)
+            save_json(directory / 'params.json', {
+                'schema': 1, 'weapon': glove, 'paint_kit': kit['paint_kit'], 'name': kit['name'], 'kind': 'glove',
+                'material': chosen[name], 'paint_material': paints.get(name), 'layout': layout,
+                'glove_textures': outputs, 'available': available, 'missing_inputs': missing,
+                'degraded_inputs': degraded,
+                'approximation': cs2_gloves.APPROXIMATION})
+            if available:
+                record['finishes'].append(kit['paint_kit'])
+            else:
+                record['missing_finishes'][str(kit['paint_kit'])] = missing
+            entry = glove_kits.setdefault(kit['paint_kit'], {
+                'paint_kit': kit['paint_kit'], 'name': kit['name'],
+                'display_name': kit['name'], 'style': int(kit.get('style', 0)),
+                'wear_min': float(kit.get('wear_remap_min', 0.06)), 'wear_max': float(kit.get('wear_remap_max', 0.8)),
+                'rarity': rarity.get(kit['name'], 'ancient'), 'weapons': [], 'available_weapons': [],
+                'legacy_model': False, 'composite_material': chosen[name], 'kind': 'glove',
+                'glove_textures': dict(cs2_gloves.TEXTURES)})
+            entry['weapons'].append(glove)
+            if available:
+                entry['available_weapons'].append(glove)
+            print('gloves ' + glove + ' ' + name + ': ' + ('ok' if available else 'missing ' + ', '.join(missing)), flush=True)
+    locale = cache / 'data/csgo_english.txt'
+    if locale.is_file():
+        tokens = {k.lower(): v for k, v in parse_kv(locale.read_text(encoding='utf-8-sig')).get('lang', {}).get('Tokens', {}).items()
+                  if isinstance(v, str)}
+        for entry in glove_kits.values():
+            tag = kits[entry['name'].lower()].get('description_tag', '').lstrip('#').lower()
+            entry['display_name'] = tokens.get(tag, entry['name'])
+    index_path = skins / 'index.json'
+    index = json.loads(index_path.read_text()) if index_path.is_file() else {'schema': 1, 'kits': []}
+    save_json(index_path, cs2_gloves.merge_index(index, glove_kits))
+    for glove, record in records.items():
+        record['finishes'].sort()
+        record['finish_count'] = len(pairs.get(glove, []))
+        record['status'] = 'failed' if record['errors'] or 'file' not in record else 'ok'
+    summary = {'types_ok': sum(r['status'] == 'ok' for r in records.values()), 'types': len(cs2_gloves.GLOVE_IDS),
+               'pairs': sum(len(v) for v in pairs.values()),
+               'pairs_available': sum(len(r['finishes']) for r in records.values()),
+               'missing_chunks': sorted(missing_chunks), 'errors': errors,
+               'elapsed_seconds': round(time.monotonic() - begin, 3)}
+    manifest = json.loads(manifest_path.read_text())
+    manifest['gloves'] = records
+    save_json(manifest_path, manifest)
+    print(json.dumps(summary, indent=2))
+    return 0 if summary['types_ok'] == summary['types'] and not errors else 1
+
+
+def export_icons(cache, manifest_path, fingerprint, run, vpk_path):
+    """--icons: white equipment silhouettes to icons/<id>.png for the ammo HUD; writes only manifest['icons']."""
+    import cs2_icons
+    from cs2_skins import Vpk
+    try:
+        import numpy  # noqa: F401
+        from PIL import Image  # noqa: F401
+    except ImportError as error:
+        raise SystemExit('error: --icons needs numpy and Pillow to rasterize the SVGs; install them with '
+                         '`python3 -m pip install numpy Pillow` and rerun. Nothing was changed.') from error
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    weapons = manifest.get('weapons', {}).keys()
+    if not weapons:
+        raise SystemExit('error: run the weapon export first; the manifest lists no weapons. Nothing was changed.')
+    sources = cs2_icons.icon_names(Vpk(vpk_path).entries, weapons)
+    icons = cache / 'icons'
+    icons.mkdir(exist_ok=True)
+    records, missing = {}, sorted(set(weapons) - sources.keys())
+    with tempfile.TemporaryDirectory(prefix='.export-', dir=icons) as work:
+        svg_path = lambda source: Path(work) / (source[:-len('.vsvg_c')] + '.svg')
+        # Never call the CLI with an empty --vpk_filepath: an empty prefix matches, and extracts, every entry.
+        try:
+            if sources:
+                run(['--vpk_filepath', ','.join(sources.values()), '-d', '-o', work + os.sep], 'icons')
+        except RuntimeError:
+            # The CLI stops at the first icon whose archive chunk is absent (partial installs); retry the
+            # rest one by one. Anything still absent is listed under 'missing' and the HUD falls back to
+            # the item-model silhouette.
+            for weapon, source in sources.items():
+                if not svg_path(source).is_file():
+                    try:
+                        run(['--vpk_filepath', source, '-d', '-o', work + os.sep], 'icons-' + weapon)
+                    except RuntimeError as error:
+                        print('icons: ' + weapon + ': ' + str(error)[:200], file=sys.stderr)
+        for weapon, source in sources.items():
+            svg = svg_path(source)
+            if not svg.is_file():
+                missing.append(weapon)
+                continue
+            target = icons / (weapon + '.png')
+            temporary = icons / (weapon + '.exporting.png')
+            width, height = cs2_icons.rasterize(svg.read_text(encoding='utf-8'), cs2_icons.ICON_HEIGHT, temporary)
+            temporary.replace(target)
+            records[weapon] = {'file': 'icons/' + weapon + '.png', 'source': source, 'width': width, 'height': height}
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    manifest['icons'] = {'source': fingerprint, 'records': records, 'missing': sorted(missing)}
+    save_json(manifest_path, manifest)
+    print('icons: ' + str(len(records)) + ' exported to ' + str(icons) + ('; no CS2 icon for ' + ', '.join(sorted(missing))
+                                                                       if missing else ''))
+
+
+def export_equipment_clips(weapon, record, cache, run):
+    """Export recovered equipment clips and their compiled, normalized event timelines."""
+    import cs2_equipment
+    record['kind'] = 'equipment'
+    record['equipment_schema'] = 1
+    record['viewmodel_animations'] = dict(cs2_equipment.ANIMATIONS[weapon])
+    record['viewmodel_clips'] = {}
+    record['viewmodel_markers'] = {}
+    record['viewmodel_note'] = ('Separate clips use the shared character viewmodel skeleton and equipment weapon skeleton.'
+                                if cs2_equipment.CLIPS[weapon] else 'Passive equipment; no dedicated first-person clips exist.')
+    world_clips = record.get('models', {}).get('world', {}).get('clips', [])
+    if weapon == 'c4':
+        record['worldmodel_animations'] = {'planted': 'planted'} if 'planted' in world_clips else {}
+    clips_dir = cache / 'models' / weapon / 'clips'
+    for name, source in cs2_equipment.clip_sources(weapon).items():
+        clips_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            with tempfile.TemporaryDirectory(prefix='.clips-', dir=clips_dir) as work:
+                output = Path(work) / (name + '.gltf')
+                run(['--vpk_filepath', source, '-d', '--gltf_export_format', 'gltf',
+                     '--gltf_export_animations', '-o', str(output)], weapon + '-' + name)
+                details = validate_gltf(output)
+                compiled = run(['--vpk_filepath', source, '--block', 'DATA'], weapon + '-' + name + '-markers')
+                seconds = cs2_equipment.duration(compiled)
+                if seconds <= 0 or not details['clips']:
+                    raise ValueError('clip has no animation duration')
+                markers = cs2_equipment.markers(compiled)
+                for path in Path(work).iterdir():
+                    if path.is_file():
+                        path.replace(clips_dir / path.name)
+            record['viewmodel_clips'][name] = {
+                'file': str((clips_dir / (name + '.gltf')).relative_to(cache)),
+                'animation': details['clips'][0], 'source': source, 'duration_seconds': seconds}
+            record['viewmodel_markers'][name] = markers
+        except (OSError, ValueError, RuntimeError, KeyError, IndexError, struct.error) as error:
+            record['errors'].append('viewmodel clip ' + name + ': ' + str(error))
+
+
+def input_plan(equipment):
+    """(CLI source, decompiled file name, log name) per input. Equipment reads only its sound events, always into private storage."""
+    if equipment:
+        return [('soundevents/game_sounds_weapons.vsndevts_c', 'game_sounds_weapons.vsndevts', 'equipment-sound-events')]
+    return [('scripts/weapons.vdata_c', 'weapons.vdata', 'weapons-data'),
+            ('scripts/surfaceproperties_game.txt', 'surfaceproperties_game.txt', 'surface-data'),
+            ('soundevents/game_sounds_weapons.vsndevts_c', 'game_sounds_weapons.vsndevts', 'sound-events')]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--vpk', default='~/csmc-assets/cs2/game/csgo/pak01_dir.vpk')
+    parser.add_argument('--extra-vpk', action='append', default=[], help='additional owned VPK for grenade child audio (repeatable, e.g. game/core/pak01_dir.vpk)')
+    parser.add_argument('--cli', default=os.environ.get('CSMC_S2V_CLI') or shutil.which('Source2Viewer-CLI') or '~/csmc-assets/tools/s2v/Source2Viewer-CLI')
+    parser.add_argument('--cache', default=os.environ.get('CSMC_CACHE') or '~/.csmc/cache')
+    parser.add_argument('--weapons', default='all', help='comma/space-separated vdata IDs, or all')
+    parser.add_argument('--grenades', action='store_true', help='export the six grenade world models and grenade-only audio actions')
+    parser.add_argument('--skins', action='store_true', help='export paint-kit inputs and index only (no model/audio export); includes knife finishes')
+    parser.add_argument('--knives', action='store_true', help='export the 22 knife world models, viewmodel clips and knife-only audio actions')
+    parser.add_argument('--equipment', action='store_true', help='export healthshot, C4 and passive defuse kit models, equipment clips, authored markers and audio')
+    parser.add_argument('--arms', action='store_true', help='export first-person arms, sleeves and default gloves to models/arms (needs knife clips for the joint report)')
+    parser.add_argument('--gun-clips', action='store_true', help='export firearm viewmodel clips into existing firearm records (models/<id>/clips)')
+    parser.add_argument('--sounds', action='store_true', help='refresh only firearm audio in existing same-source records; preserve models and viewmodel clips')
+    parser.add_argument('--gloves', action='store_true', help='export the 8 glove viewmodel meshes to models/gloves and baked glove finishes to skins (needs --skins data, knife clips, numpy and Pillow)')
+    parser.add_argument('--icons', action='store_true', help='rasterize CS2 equipment icons for exported weapons to icons/<id>.png (white silhouettes for the ammo HUD; needs numpy and Pillow)')
+    args = parser.parse_args()
+    if sum((args.grenades, args.skins, args.knives, args.equipment, args.arms, args.gun_clips, args.sounds, args.gloves, args.icons)) > 1:
+        parser.error('--grenades, --knives, --equipment, --arms, --gun-clips, --sounds, --gloves, --icons and --skins are separate export modes')
+    vpk, cli = (Path(value).expanduser().resolve() for value in (args.vpk, args.cli))
+    if not vpk.is_file() or not cli.is_file() or not os.access(cli, os.X_OK):
+        parser.error('provide an existing --vpk and executable --cli')
+    extra_vpks = [Path(value).expanduser().resolve() for value in args.extra_vpk]
+    if any(not path.is_file() for path in extra_vpks):
+        parser.error('each --extra-vpk must be an existing VPK directory index')
+    from cs2_skins import checked_cache
+    try:
+        cache = checked_cache(args.cache)
+    except ValueError as error:
+        parser.error(str(error))
+    if args.skins:
+        from cs2_skins import export_skins
+        return export_skins(vpk, cli, cache, args.weapons)
+    logs = cache / 'logs'
+    logs.mkdir(exist_ok=True)
+    started = time.monotonic()
+    version = subprocess.check_output([str(cli), '--version'], cwd=cache, text=True).strip()
+    fingerprint = {'source_vpk': str(vpk), 'vpk_size': vpk.stat().st_size,
+                   'vpk_mtime_ns': vpk.stat().st_mtime_ns, 'tool_version': version, 'export_schema': 2}
+    if args.grenades and extra_vpks:
+        fingerprint['extra_vpks'] = [{'source_vpk': str(path), 'vpk_size': path.stat().st_size,
+                                     'vpk_mtime_ns': path.stat().st_mtime_ns} for path in extra_vpks]
+    manifest_path = cache / 'manifest.json'
+    previous = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    previous_source = previous.get('source')
+    same_source = previous_source == fingerprint
+    manifest = previous
+    manifest.setdefault('weapons', {})
+    record_sources = manifest.setdefault('record_sources', {})
+    if not args.equipment:
+        for key, value in manifest['weapons'].items():
+            record_sources.setdefault(key, value.get('source', previous_source))
+        manifest['source'] = fingerprint
+        manifest['updated_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    ffmpeg = shutil.which('ffmpeg')
+    encoder_options = []
+    if ffmpeg:
+        encoders = subprocess.check_output([ffmpeg, '-hide_banner', '-encoders'], text=True)
+        if re.search(r'\blibvorbis\b', encoders):
+            encoder_options = ['-c:a', 'libvorbis', '-q:a', '5']
+        elif re.search(r'\bvorbis\b', encoders):
+            encoder_options = ['-c:a', 'vorbis', '-strict', '-2', '-ac', '2', '-q:a', '5']
+        else:
+            ffmpeg = None
+    audio_format = 'ogg' if ffmpeg else 'wav'
+    if not args.equipment:
+        manifest['audio_format'] = audio_format
+    if not ffmpeg:
+        print('WARNING: ffmpeg with a Vorbis encoder is unavailable; preserving WAV/MP3 audio. Install ffmpeg yourself and rerun for OGG.', file=sys.stderr)
+
+    def run(options, log, archive=vpk):
+        command = [str(cli), '-i', str(archive)] + options
+        completed = subprocess.run(command, cwd=cache, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        (logs / (log + '.log')).write_text('$ ' + ' '.join(command) + '\n' + completed.stdout)
+        # This CLI can return zero even after printing a per-file exception.
+        errors = re.findall(r"(?:Could not find file '[^']+'|[^\n]*Exception:[^\n]*)", completed.stdout)
+        if completed.returncode or errors:
+            raise RuntimeError('; '.join(dict.fromkeys(errors)) or 'CLI exit ' + str(completed.returncode))
+        return completed.stdout
+
+    def decompile(source, target, name):
+        if target.is_file() and target.stat().st_size and same_source:
+            return
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_name(target.stem + '.exporting' + target.suffix)
+        run(['--vpk_filepath', source, '-d', '-o', str(temporary)], name)
+        if not temporary.is_file() or not temporary.stat().st_size:
+            raise RuntimeError('CLI did not produce ' + str(target))
+        temporary.replace(target)
+
+    if args.arms:
+        return export_arms(cache, manifest_path, fingerprint, run)
+    if args.gloves:
+        return export_gloves(cache, manifest_path, fingerprint, run, vpk)
+    if args.icons:
+        return export_icons(cache, manifest_path, fingerprint, run, vpk)
+
+    if args.equipment:
+        # Equipment decompiles only its sound events into a private temporary directory; shared data/* is never written.
+        with tempfile.TemporaryDirectory(prefix='.equipment-inputs-', dir=cache) as work:
+            for source, name, log in input_plan(True):
+                decompile(source, Path(work) / name, log)
+            sound_events = blocks((Path(work) / 'game_sounds_weapons.vsndevts').read_text())
+        data = {}
+    else:
+        for source, name, log in input_plan(False):
+            if args.sounds and name == 'surfaceproperties_game.txt':
+                continue
+            decompile(source, cache / 'data' / name, log)
+        data = blocks((cache / 'data/weapons.vdata').read_text())
+        sound_events = blocks((cache / 'data/game_sounds_weapons.vsndevts').read_text())
+    all_weapons = {key[7:]: value for key, value in data.items()
+                   if key.startswith('weapon_') and key != 'weapon_base' and not key.endswith('_prefab')}
+    firearm_types = {'WEAPONTYPE_PISTOL', 'WEAPONTYPE_RIFLE', 'WEAPONTYPE_SUBMACHINEGUN',
+                     'WEAPONTYPE_SNIPER_RIFLE', 'WEAPONTYPE_SHOTGUN', 'WEAPONTYPE_MACHINEGUN', 'WEAPONTYPE_TASER'}
+
+    def merged_fields(body):
+        fields = string_fields(body)
+        base = fields.get('_base')
+        return {**string_fields(data[base]), **fields} if base in data else fields
+
+    if args.gun_clips:
+        firearms = {key: merged_fields(body) for key, body in all_weapons.items()
+                    if string_fields(body).get('m_WeaponType') in firearm_types}
+        chosen = sorted(firearms) if args.weapons == 'all' else list(dict.fromkeys(re.split(r'[,\s]+', args.weapons.strip())))
+        unknown = set(chosen) - firearms.keys()
+        if unknown:
+            parser.error('unknown firearm IDs: ' + ', '.join(sorted(unknown)))
+        return export_gun_clips_mode(cache, manifest_path, vpk, run, firearms, chosen)
+    if args.equipment:
+        import cs2_equipment
+        from cs2_equipment import sound_selection
+        weapons = {key: 'm_szWorldModel = "' + source + '"' for key, source in cs2_equipment.MODELS.items()}
+    elif args.grenades:
+        from cs2_grenades import ACTIONS, GRENADE_ALIASES, sound_selection
+        weapons = {key: body for key, body in all_weapons.items() if key in GRENADE_ALIASES}
+    elif args.knives:
+        import cs2_knives
+        from cs2_knives import ACTIONS, sound_selection
+        from cs2_skins import Vpk
+        weapons = cs2_knives.resolve_knives(data, string_fields)
+        missing_knives = set(cs2_knives.KNIFE_IDS) - weapons.keys()
+        if missing_knives:
+            raise RuntimeError('knife records absent from weapons.vdata: ' + ', '.join(sorted(missing_knives)))
+        clip_entries = {}
+        for source in Vpk(vpk).entries:
+            if source.startswith(cs2_knives.CLIP_ROOT) and source.endswith('.vnmclip_c'):
+                folder, _, name = source[len(cs2_knives.CLIP_ROOT):].partition('/')
+                clip_entries.setdefault(folder, {})[name[:-len('.vnmclip_c')]] = source
+    else:
+        weapons = {key: body for key, body in all_weapons.items()
+                   if string_fields(body).get('m_WeaponType') in firearm_types}
+    # Export modes share one index. Never prune another mode's records.
+    selected = (sorted(weapons) if not args.knives else list(weapons)) if args.weapons == 'all' else list(dict.fromkeys(re.split(r'[,\s]+', args.weapons.strip())))
+    unknown = set(selected) - weapons.keys()
+    if unknown:
+        parser.error('unknown weapon IDs: ' + ', '.join(sorted(unknown)))
+    if args.sounds:
+        unavailable = [weapon for weapon in selected
+                       if not manifest['weapons'].get(weapon, {}).get('models')
+                       or record_sources.get(weapon) != fingerprint]
+        if unavailable:
+            parser.error('--sounds needs existing same-source firearm records; run a full export first for: '
+                         + ', '.join(unavailable))
+    sound_archives = {}
+    if args.grenades:
+        from cs2_skins import Vpk
+        for archive in [vpk] + extra_vpks:
+            for source in Vpk(archive).entries:
+                if source.endswith('.vsnd_c'):
+                    sound_archives.setdefault(source[:-2], archive)
+    import cs2_guns
+    gun_context = None
+    failures, skipped = {}, 0
+    for weapon in selected:
+        begin = time.monotonic()
+        old = manifest['weapons'].get(weapon, {})
+        sounds_only = args.sounds
+        if not sounds_only and record_sources.get(weapon) == fingerprint and old.get('status') == 'ok' and old.get('audio_format') == audio_format:
+            try:
+                for model in old['models'].values():
+                    validate_gltf(cache / model['file'])
+                sounds_only = (not (cache / old['sounds_manifest']).is_file()
+                               or not all((cache / file).is_file() for file in old.get('sound_files', []))
+                               or not scope_sounds_complete(cache, old, weapon))
+                for clip in old.get('viewmodel_clips', {}).values():
+                    validate_gltf(cache / clip['file'])
+                if args.equipment:
+                    if (old.get('kind') != 'equipment' or old.get('equipment_schema') != 1
+                            or old.get('viewmodel_animations') != cs2_equipment.ANIMATIONS[weapon]):
+                        raise ValueError('equipment metadata incomplete')
+                    if set(old.get('viewmodel_clips', {})) != set(cs2_equipment.CLIPS[weapon]):
+                        raise ValueError('equipment clip set incomplete')
+                    for name, clip in old.get('viewmodel_clips', {}).items():
+                        if clip.get('duration_seconds', 0) <= 0 or name not in old.get('viewmodel_markers', {}):
+                            raise ValueError('equipment timing metadata incomplete')
+                elif not (args.knives or args.grenades or cs2_guns.viewmodel_cache_ok(old)):
+                    raise ValueError('viewmodel clips incomplete')
+                if not sounds_only:
+                    skipped += 1
+                    print(weapon + ': cached', flush=True)
+                    continue
+            except (ValueError, OSError, KeyError):
+                sounds_only = False
+        body = weapons[weapon]
+        fields = string_fields(body)
+        base = fields.get('_base')
+        if base in data:
+            fields = {**string_fields(data[base]), **fields}
+        world = fields.get('m_szWorldModel')
+        view = fields.get('m_szViewModel') or fields.get('m_szModel')
+        if sounds_only:
+            record = {**old, 'sound_files': [], 'audio_format': audio_format,
+                      'errors': [error for error in old.get('errors', []) if not error.startswith('sound: ')]}
+        else:
+            record = {'models': {}, 'sound_files': [], 'errors': [], 'audio_format': audio_format,
+                      'source': fingerprint,
+                      'worldmodel_source': world, 'viewmodel_source': view,
+                      'viewmodel_note': 'No separate viewmodel field in vdata' if not view else 'See exported mesh/node names for arm geometry'}
+        # Invalidate this record durably before replacing any of its asset files.
+        # An interrupted export must never leave old-source metadata marked OK.
+        record['status'] = 'in_progress'
+        manifest['weapons'][weapon] = record
+        record_sources[weapon] = fingerprint
+        save_json(manifest_path, manifest)
+        model_sources = {} if sounds_only else {'world': world or view}
+        if not sounds_only and view and view != world and world:
+            model_sources['view'] = view
+        for role, source in model_sources.items():
+            if not source:
+                record['errors'].append('no model field in vdata')
+                continue
+            filename = weapon + ('_v' if role == 'view' else '') + '.gltf'
+            destination = cache / 'models' / weapon
+            destination.mkdir(parents=True, exist_ok=True)
+            try:
+                with tempfile.TemporaryDirectory(prefix='.export-', dir=destination) as work:
+                    output = Path(work) / filename
+                    run(['--vpk_filepath', source if source.endswith('_c') else source + '_c', '-d',
+                         '--gltf_export_format', 'gltf', '--gltf_export_materials', '--gltf_export_animations',
+                         '--gltf_textures_adapt', '--gltf_compose_additive', '-o', str(output)], weapon + '-' + role)
+                    details = validate_gltf(output)
+                    # Keep all sidecars together; never publish an incomplete model.
+                    for path in Path(work).iterdir():
+                        if path.is_file():
+                            path.replace(destination / path.name)
+                    details['file'] = str((destination / filename).relative_to(cache))
+                    details['source'] = source
+                    record['models'][role] = details
+                    if role == 'world':
+                        record['animations'] = {} if args.grenades or args.knives or args.equipment else animation_map(details['clips'])
+            except (OSError, ValueError, RuntimeError, KeyError, struct.error) as error:
+                record['errors'].append(role + ' model: ' + str(error))
+        if args.equipment and not sounds_only:
+            export_equipment_clips(weapon, record, cache, run)
+        elif args.knives and not sounds_only:
+            record['kind'] = 'knife'
+            stem = Path(world).parent.name if world else weapon
+            folder = cs2_knives.clip_folder(stem, clip_entries)
+            record['viewmodel_clip_folder'] = cs2_knives.CLIP_ROOT + folder if folder else None
+            record['viewmodel_clips'] = {}
+            record['viewmodel_note'] = ('Knife viewmodel clips are separate glTF files on the shared viewmodel arm skeleton; '
+                                        'bone `wpn` carries the knife. World glTF holds the knife mesh and embedded inventory clips.')
+            if not folder:
+                record['errors'].append('no viewmodel clip folder for model stem ' + stem)
+            else:
+                clips_dir = cache / 'models' / weapon / 'clips'
+                clips_dir.mkdir(parents=True, exist_ok=True)
+                try:
+                    with tempfile.TemporaryDirectory(prefix='.clips-', dir=clips_dir) as work:
+                        names = sorted(clip_entries[folder])
+                        run(['--vpk_filepath', ','.join(clip_entries[folder][name] for name in names), '-d',
+                             '--gltf_export_format', 'gltf', '--gltf_export_animations', '-o', work + os.sep], weapon + '-clips')
+                        exported = Path(work) / cs2_knives.CLIP_ROOT / folder
+                        clips = {}
+                        for name in names:
+                            details = validate_gltf(exported / (name + '.gltf'))
+                            clips[name] = {'file': str((clips_dir / (name + '.gltf')).relative_to(cache)),
+                                           'animation': details['clips'][0] if details['clips'] else None,
+                                           'source': clip_entries[folder][name]}
+                        for path in exported.iterdir():
+                            if path.is_file():
+                                path.replace(clips_dir / path.name)
+                        record['viewmodel_clips'] = clips
+                        record['animations'] = cs2_knives.clip_map(clips)
+                except (OSError, ValueError, RuntimeError, KeyError, IndexError, struct.error) as error:
+                    record['errors'].append('viewmodel clips: ' + str(error))
+                missing_actions = {'draw', 'slash', 'stab', 'backstab', 'inspect', 'idle'} - record.setdefault('animations', {}).keys()
+                if missing_actions and record['viewmodel_clips']:
+                    record['errors'].append('viewmodel clips missing actions: ' + ', '.join(sorted(missing_actions)))
+        elif not args.grenades and not sounds_only:
+            if gun_context is None:
+                gun_context = gun_clip_context(vpk, run)
+            export_gun_clips(weapon, fields, record, gun_context, cache, run, lambda: save_json(manifest_path, manifest))
+            if record['viewmodel_status'] != 'ok':
+                record['errors'].extend('viewmodel: ' + error for error in record['viewmodel_errors'])
+                record['errors'].extend('viewmodel missing action: ' + action for action in record['viewmodel_missing_actions'])
+        sound_errors = []
+        if args.grenades or args.knives or args.equipment:
+            chosen, sound_errors = sound_selection(weapon, sound_events)
+            actions = cs2_equipment.SOUNDS[weapon] if args.equipment else ACTIONS
+        else:
+            prefixes = {name.split('.', 1)[0].lower() for name in re.findall(r'soundevent:"([^"]+)"', body)
+                        if name.lower().startswith('weapon_')}
+            prefixes.add('weapon_' + weapon.lower())
+            if world:
+                prefixes.add('weapon_' + Path(world).parent.name.lower())
+            sound_folders = {'sounds/weapons/' + weapon.lower() + '/'}
+            if world:
+                sound_folders.add('sounds/weapons/' + Path(world).parent.name.lower() + '/')
+            # Infer aliases such as Weapon_CZ from its weapon-specific recordings.
+            for event, definition in sound_events.items():
+                if any(folder in definition.lower() for folder in sound_folders):
+                    prefixes.add(event.split('.', 1)[0].lower())
+            chosen = {}
+            for event, definition in sound_events.items():
+                prefix, _, suffix = event.lower().partition('.')
+                if prefix not in prefixes:
+                    continue
+                if event in SCOPE_SOUND_EVENTS.get(weapon, {}):
+                    resources = list(dict.fromkeys(re.findall(r'"(sounds/[^"\n]+\.vsnd)"', definition)))
+                    if resources:
+                        chosen[event] = (SCOPE_SOUND_EVENTS[weapon][event], resources)
+                    continue
+                if suffix.startswith(('single', 'fire', 'silenced', 'shoot')):
+                    action = 'fire'
+                elif suffix.startswith(('draw', 'deploy')):
+                    action = 'draw'
+                elif re.search(r'reload|clip|mag|bolt|slide|pump|shell|addammo|round|chamber|belt|cover|pinpull|boxin|boxout|chain', suffix):
+                    action = 'reload'
+                else:
+                    continue
+                resources = list(dict.fromkeys(re.findall(r'"(sounds/[^"\n]+\.vsnd)"', definition)))
+                if resources:
+                    chosen[event] = (action, resources)
+            for event in SCOPE_SOUND_EVENTS.get(weapon, {}):
+                if event not in chosen:
+                    sound_errors.append('missing scope sound event or resources: ' + event)
+            actions = ('fire', 'reload', 'draw') + (('zoom_in', 'zoom_out') if weapon in SCOPE_SOUND_EVENTS else ())
+        sounds = {'weapon': weapon, 'events': {}, 'actions': {action: [] for action in actions}, 'errors': sound_errors}
+        sound_dir = cache / 'sounds' / weapon
+        sound_dir.mkdir(parents=True, exist_ok=True)
+        sources = sorted({source for _, resources in chosen.values() for source in resources})
+        if args.grenades:
+            sounds['source_archives'] = {source: str(sound_archives[source]) for source in sources if source in sound_archives}
+        if sources:
+            with tempfile.TemporaryDirectory(prefix='.audio-', dir=sound_dir) as work:
+                work = Path(work)
+                groups = {}
+                for source in sources:
+                    archive = sound_archives.get(source) if args.grenades else vpk
+                    if archive is None:
+                        sounds['errors'].append('sound resource absent from supplied VPK indexes: ' + source + '_c')
+                    else:
+                        groups.setdefault(archive, []).append(source)
+                for group_index, (archive, group_sources) in enumerate(groups.items()):
+                    try:
+                        filters = ','.join(source + '_c' for source in group_sources)
+                        # Exact single-file filters do not preserve archive-relative directories.
+                        output = work / Path(group_sources[0]).with_suffix('.wav') if len(group_sources) == 1 else work
+                        output.parent.mkdir(parents=True, exist_ok=True)
+                        run(['--vpk_filepath', filters, '-d', '-o', str(output) + (os.sep if len(group_sources) > 1 else '')],
+                            weapon + '-sounds-' + str(group_index), archive)
+                    except RuntimeError as error:
+                        sounds['errors'].append(str(error))
+                output_sources = {}
+                for event, (action, resources) in chosen.items():
+                    files = []
+                    suffix = re.sub(r'[^a-z0-9]+', '_', event.split('.', 1)[-1].lower()).strip('_')
+                    for index, source in enumerate(resources):
+                        raw = work / Path(source).with_suffix('.wav')
+                        if not raw.exists():
+                            raw = work / Path(source).with_suffix('.mp3')
+                        if not raw.exists():
+                            sounds['errors'].append('missing decoded audio: ' + source)
+                            continue
+                        name = (action if suffix in ('single', 'draw', 'reload') else action + '_' + suffix)
+                        if index:
+                            name += '_' + str(index + 1)
+                        if name in output_sources and output_sources[name] != source:
+                            name += '_' + re.sub(r'[^a-z0-9]+', '_', event.lower()).strip('_')
+                        output_sources[name] = source
+                        output = sound_dir / (name + ('.ogg' if ffmpeg else '.wav'))
+                        try:
+                            if ffmpeg:
+                                converted = subprocess.run([ffmpeg, '-hide_banner', '-loglevel', 'error', '-y', '-i', str(raw)]
+                                                           + encoder_options + [str(output)], capture_output=True, text=True)
+                                if converted.returncode:
+                                    raise RuntimeError(converted.stderr.strip())
+                            elif raw.suffix == '.wav':
+                                shutil.copyfile(raw, output)
+                            elif shutil.which('afconvert'):
+                                converted = subprocess.run(['afconvert', str(raw), str(output), '-f', 'WAVE', '-d', 'LEI16'],
+                                                           capture_output=True, text=True)
+                                if converted.returncode:
+                                    raise RuntimeError(converted.stderr.strip())
+                            else:
+                                original = output.with_suffix('.mp3')
+                                shutil.copyfile(raw, original)
+                                raise RuntimeError('MP3 preserved at ' + str(original) + '; ffmpeg or afconvert is needed for WAV')
+                            relative = str(output.relative_to(cache))
+                            files.append(output.name)
+                            record['sound_files'].append(relative)
+                            if output.name not in sounds['actions'][action]:
+                                sounds['actions'][action].append(output.name)
+                        except (OSError, RuntimeError) as error:
+                            sounds['errors'].append(source + ': ' + str(error))
+                    sounds['events'][event] = {'action': action, 'sources': resources, 'files': files}
+        sounds['unavailable_actions'] = [action for action, files in sounds['actions'].items() if not files]
+        save_json(sound_dir / 'manifest.json', sounds)
+        record['sounds_manifest'] = str((sound_dir / 'manifest.json').relative_to(cache))
+        record['errors'].extend('sound: ' + error for error in sounds['errors'])
+        record['status'] = 'failed' if record['errors'] else 'ok'
+        record['elapsed_seconds'] = round(time.monotonic() - begin, 3)
+        record['sound_files'] = sorted(set(record['sound_files']))
+        manifest['weapons'][weapon] = record
+        record_sources[weapon] = fingerprint
+        save_json(manifest_path, manifest)
+        if record['errors']:
+            failures[weapon] = record['errors']
+        print(weapon + ': ' + record['status'] + ' (' + str(record['elapsed_seconds']) + 's)', flush=True)
+    summary = {'selected': len(selected), 'cached': skipped, 'failed': len(failures),
+               'elapsed_seconds': round(time.monotonic() - started, 3), 'failures': failures}
+    if not args.equipment:
+        manifest['last_run'] = summary
+    save_json(manifest_path, manifest)
+    print(json.dumps(summary, indent=2))
+    return 1 if failures else 0
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+        print('export-cs2-assets: ' + str(error), file=sys.stderr)
+        sys.exit(1)

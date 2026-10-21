@@ -1,0 +1,28 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.csmc.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "SoundBufferLibraryMixin",
+    "ItemInHandLayerMixin",
+    "EquipmentArmPoseMixin",
+    "ViewmodelCameraMixin",
+    "InspectKeyMappingMixin",
+    "KnifeInputMixin",
+    "KnifeKeyEdgeMixin",
+    "ScopeGameRendererMixin",
+    "GunWalkingBobMixin",
+    "ScopeMouseMixin",
+    "ScopeMinecraftMixin",
+    "ScopeGuiMixin",
+    "ScopeUseKeyMixin",
+    "SoundEngineAccessor",
+    "SoundManagerAccessor",
+    "InventoryScreenGloveMixin",
+    "CreativeInventoryGloveMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

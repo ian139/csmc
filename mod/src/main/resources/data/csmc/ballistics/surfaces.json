@@ -1,0 +1,211 @@
+{
+  "surfaces": {
+    "default": { "distance_modifier": 0.5, "damage_modifier": 0.45 },
+    "glass": { "distance_modifier": 0.95, "damage_modifier": 0.9 },
+    "ice": { "distance_modifier": 0.7, "damage_modifier": 0.6 },
+    "foliage": { "distance_modifier": 0.9, "damage_modifier": 0.9 },
+    "carpet": { "distance_modifier": 0.7, "damage_modifier": 0.8 },
+    "cardboard": { "distance_modifier": 0.9, "damage_modifier": 0.9 },
+    "wood": { "distance_modifier": 0.85, "damage_modifier": 0.55 },
+    "metalgrate": { "distance_modifier": 0.9, "damage_modifier": 0.9 },
+    "chain": { "distance_modifier": 0.9, "damage_modifier": 0.9 },
+    "metalpanel": { "distance_modifier": 0.45, "damage_modifier": 0.4 },
+    "metal": { "distance_modifier": 0.35, "damage_modifier": 0.35 },
+    "solidmetal": { "distance_modifier": 0.25, "damage_modifier": 0.25 },
+    "dirt": { "distance_modifier": 0.55, "damage_modifier": 0.35 },
+    "sand": { "distance_modifier": 0.35, "damage_modifier": 0.3 },
+    "gravel": { "distance_modifier": 0.4, "damage_modifier": 0.35 },
+    "snow": { "distance_modifier": 0.8, "damage_modifier": 0.7 },
+    "clay": { "distance_modifier": 0.9, "damage_modifier": 0.55 },
+    "tile": { "distance_modifier": 0.65, "damage_modifier": 0.35 },
+    "brick": { "distance_modifier": 0.45, "damage_modifier": 0.3 },
+    "concrete": { "distance_modifier": 0.45, "damage_modifier": 0.3 },
+    "rock": { "distance_modifier": 0.4, "damage_modifier": 0.25 },
+    "blockbullets": { "distance_modifier": 0.0, "damage_modifier": 0.0 }
+  },
+  "blocks": [
+    {
+      "surface": "blockbullets",
+      "blocks": [
+        "minecraft:obsidian",
+        "minecraft:crying_obsidian",
+        "minecraft:reinforced_deepslate",
+        "minecraft:netherite_block",
+        "minecraft:ancient_debris",
+        "#c:obsidians",
+        "#c:storage_blocks/netherite"
+      ],
+      "break": "none",
+      "stops": true
+    },
+    {
+      "surface": "glass",
+      "blocks": [
+        "minecraft:glass",
+        "minecraft:glass_pane",
+        "minecraft:tinted_glass",
+        "#minecraft:impermeable",
+        "#c:glass_blocks",
+        "#c:glass_panes"
+      ],
+      "break": "shatter"
+    },
+    {
+      "surface": "ice",
+      "blocks": ["#minecraft:ice"],
+      "break": "shatter"
+    },
+    {
+      "surface": "foliage",
+      "blocks": ["#minecraft:leaves"],
+      "break": "shatter"
+    },
+    {
+      "surface": "carpet",
+      "blocks": ["#minecraft:wool", "#minecraft:wool_carpets"],
+      "break": "shatter"
+    },
+    {
+      "surface": "wood",
+      "blocks": [
+        "#minecraft:logs",
+        "#minecraft:planks",
+        "#minecraft:wooden_slabs",
+        "#minecraft:wooden_stairs",
+        "#minecraft:wooden_doors",
+        "#minecraft:wooden_trapdoors",
+        "#minecraft:wooden_fences",
+        "#minecraft:fence_gates",
+        "#minecraft:wooden_pressure_plates",
+        "#minecraft:wooden_buttons",
+        "minecraft:bookshelf",
+        "minecraft:chiseled_bookshelf"
+      ],
+      "break": "cumulative",
+      "break_damage": 60
+    },
+    {
+      "surface": "metalgrate",
+      "blocks": ["minecraft:iron_bars", "minecraft:copper_grate"],
+      "break": "cumulative",
+      "break_damage": 300
+    },
+    {
+      "surface": "chain",
+      "blocks": ["minecraft:chain"],
+      "break": "cumulative",
+      "break_damage": 300
+    },
+    {
+      "surface": "metalpanel",
+      "blocks": [
+        "minecraft:iron_door",
+        "minecraft:iron_trapdoor",
+        "minecraft:heavy_weighted_pressure_plate",
+        "minecraft:light_weighted_pressure_plate"
+      ],
+      "break": "cumulative",
+      "break_damage": 400
+    },
+    {
+      "surface": "metal",
+      "blocks": [
+        "minecraft:hopper",
+        "minecraft:cauldron",
+        "minecraft:lightning_rod",
+        "minecraft:cut_copper",
+        "#minecraft:anvil"
+      ],
+      "break": "cumulative",
+      "break_damage": 600
+    },
+    {
+      "surface": "solidmetal",
+      "blocks": [
+        "minecraft:iron_block",
+        "minecraft:gold_block",
+        "minecraft:raw_iron_block",
+        "minecraft:copper_block",
+        "#c:storage_blocks/iron",
+        "#c:storage_blocks/gold",
+        "#c:storage_blocks/copper"
+      ],
+      "break": "cumulative",
+      "break_damage": 2000
+    },
+    {
+      "surface": "snow",
+      "blocks": ["#minecraft:snow"],
+      "break": "shatter"
+    },
+    {
+      "surface": "sand",
+      "blocks": ["#minecraft:sand", "#c:sands"],
+      "break": "cumulative",
+      "break_damage": 100
+    },
+    {
+      "surface": "gravel",
+      "blocks": ["minecraft:gravel", "#c:gravels"],
+      "break": "cumulative",
+      "break_damage": 100
+    },
+    {
+      "surface": "clay",
+      "blocks": ["minecraft:clay", "minecraft:decorated_pot", "minecraft:flower_pot"],
+      "break": "shatter"
+    },
+    {
+      "surface": "dirt",
+      "blocks": ["#minecraft:dirt", "minecraft:farmland", "minecraft:dirt_path", "minecraft:soul_soil"],
+      "break": "cumulative",
+      "break_damage": 100
+    },
+    {
+      "surface": "tile",
+      "blocks": ["#minecraft:terracotta", "#c:glazed_terracottas"],
+      "break": "cumulative",
+      "break_damage": 180
+    },
+    {
+      "surface": "brick",
+      "blocks": [
+        "minecraft:bricks",
+        "minecraft:brick_slab",
+        "minecraft:brick_stairs",
+        "minecraft:brick_wall",
+        "minecraft:nether_bricks",
+        "minecraft:mud_bricks"
+      ],
+      "break": "cumulative",
+      "break_damage": 240
+    },
+    {
+      "surface": "concrete",
+      "blocks": ["#c:concretes", "#minecraft:stone_bricks", "minecraft:smooth_stone"],
+      "break": "cumulative",
+      "break_damage": 300
+    },
+    {
+      "surface": "rock",
+      "blocks": [
+        "minecraft:stone",
+        "minecraft:cobblestone",
+        "#minecraft:base_stone_overworld",
+        "#minecraft:base_stone_nether",
+        "#c:stones",
+        "#c:cobblestones",
+        "#c:sandstone_blocks"
+      ],
+      "break": "cumulative",
+      "break_damage": 240
+    }
+  ],
+  "fallback": [
+    { "surface": "cardboard", "max_hardness": 0.3, "break": "shatter" },
+    { "surface": "dirt", "max_hardness": 1.0, "break": "cumulative", "break_damage": 100 },
+    { "surface": "default", "max_hardness": 2.5, "break": "cumulative", "break_damage": 180 },
+    { "surface": "solidmetal", "max_hardness": 10.0, "break": "cumulative", "break_damage": 2000 },
+    { "surface": "blockbullets", "stops": true }
+  ]
+}

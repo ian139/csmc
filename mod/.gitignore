@@ -1,0 +1,14 @@
+.gradle/
+build/
+run/
+run-client2/
+.idea/
+*.iml
+.DS_Store
+.csmc/
+cache/
+*.vdata
+!src/test/resources/weapons-fixture.vdata
+surfaceproperties_game.txt
+run-server/
+logs/

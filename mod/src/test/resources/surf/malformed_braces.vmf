@@ -1,0 +1,7 @@
+world
+{
+	"classname" "worldspawn"
+	solid
+	{
+		"id" "2"
+}

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.csmc.ballistics.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BlockDropMixin",
+    "EndermanBulletMixin",
+    "GrenadeCollideInvoker"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

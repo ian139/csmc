@@ -1,0 +1,4 @@
+{
+  "_reason": "Zeus role: single-charge utility. weapons.vdata carries no recharge, so the Zeus reloaded in one tick and became a 500-damage gun firing every 0.15 s on pistol ammo. 30-second interruptible manual reload (not CS2's automatic recharge). Pending playtest.",
+  "reload_time_s": 30
+}

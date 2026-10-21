@@ -1,0 +1,13 @@
+{
+  "slash_damage": 39,
+  "slash_followup_damage": 25,
+  "stab_damage": 64,
+  "slash_backstab_damage": 88,
+  "stab_backstab_damage": 180,
+  "slash_range": 48,
+  "stab_range": 32,
+  "slash_cooldown": 0.45,
+  "slash_followup_cooldown": 0.38,
+  "stab_cooldown": 0.95,
+  "armor_ratio": 1.7
+}

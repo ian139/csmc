@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "M",
+    "K"
+  ],
+  "key": {
+    "M": {
+      "item": "minecraft:iron_ingot"
+    },
+    "K": [
+      {
+        "item": "csmc:knife"
+      },
+      {
+        "item": "csmc:knife_t"
+      }
+    ]
+  },
+  "result": {
+    "id": "csmc:bayonet",
+    "count": 1
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "M": { "item": "minecraft:compass" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "W": { "item": "csmc:weapon_case" }
+  },
+  "pattern": [" M ", "IWI", " I "],
+  "result": { "id": "csmc:inventory_weapon_case", "count": 1 }
+}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.csmc.client.thirdperson.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "HumanoidModelPoseMixin",
+    "GunHeldItemPoseMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

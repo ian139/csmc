@@ -1,0 +1,1575 @@
+{
+  "schema_version": 1,
+  "item_count": 85,
+  "recipe_count": 85,
+  "capture_count": 105,
+  "captures": [
+    {
+      "coverage_id": "items-firearm-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:ak47",
+        "csmc:aug",
+        "csmc:awp",
+        "csmc:bizon",
+        "csmc:cz75a",
+        "csmc:deagle",
+        "csmc:elite",
+        "csmc:famas",
+        "csmc:fiveseven",
+        "csmc:g3sg1",
+        "csmc:galilar",
+        "csmc:glock",
+        "csmc:hkp2000",
+        "csmc:m14",
+        "csmc:m249",
+        "csmc:m4a1",
+        "csmc:m4a1_silencer",
+        "csmc:mac10",
+        "csmc:mag7",
+        "csmc:mp5sd",
+        "csmc:mp7",
+        "csmc:mp9",
+        "csmc:negev",
+        "csmc:nova",
+        "csmc:p250",
+        "csmc:p90",
+        "csmc:revolver",
+        "csmc:sawedoff",
+        "csmc:scar20",
+        "csmc:sg556",
+        "csmc:ssg08",
+        "csmc:taser",
+        "csmc:tec9",
+        "csmc:ump45",
+        "csmc:usp_silencer",
+        "csmc:xm1014"
+      ],
+      "recipe_ids": [],
+      "filename": "items-firearm-01.png",
+      "width": 546,
+      "height": 310,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-knife-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:bayonet",
+        "csmc:knife",
+        "csmc:knife_butterfly",
+        "csmc:knife_canis",
+        "csmc:knife_cord",
+        "csmc:knife_css",
+        "csmc:knife_falchion",
+        "csmc:knife_flip",
+        "csmc:knife_gut",
+        "csmc:knife_gypsy_jackknife",
+        "csmc:knife_karambit",
+        "csmc:knife_kukri",
+        "csmc:knife_m9_bayonet",
+        "csmc:knife_outdoor",
+        "csmc:knife_push",
+        "csmc:knife_skeleton",
+        "csmc:knife_stiletto",
+        "csmc:knife_survival_bowie",
+        "csmc:knife_t",
+        "csmc:knife_tactical",
+        "csmc:knife_ursus",
+        "csmc:knife_widowmaker"
+      ],
+      "recipe_ids": [],
+      "filename": "items-knife-01.png",
+      "width": 546,
+      "height": 256,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-glove-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:leather_handwraps",
+        "csmc:motorcycle_gloves",
+        "csmc:slick_gloves",
+        "csmc:specialist_gloves",
+        "csmc:sporty_gloves",
+        "csmc:studded_bloodhound_gloves",
+        "csmc:studded_brokenfang_gloves",
+        "csmc:studded_hydra_gloves"
+      ],
+      "recipe_ids": [],
+      "filename": "items-glove-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-ammo-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:pistol_ammo",
+        "csmc:rifle_ammo",
+        "csmc:shotgun_shells",
+        "csmc:sniper_ammo"
+      ],
+      "recipe_ids": [],
+      "filename": "items-ammo-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-grenade-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:decoy",
+        "csmc:flashbang",
+        "csmc:hegrenade",
+        "csmc:incgrenade",
+        "csmc:molotov",
+        "csmc:smokegrenade"
+      ],
+      "recipe_ids": [],
+      "filename": "items-grenade-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-equipment-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:c4",
+        "csmc:defuse_kit",
+        "csmc:healthshot"
+      ],
+      "recipe_ids": [],
+      "filename": "items-equipment-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-armor-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:kevlar_helmet",
+        "csmc:kevlar_vest"
+      ],
+      "recipe_ids": [],
+      "filename": "items-armor-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "items-skin_and_cases-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:inventory_weapon_case",
+        "csmc:weapon_case",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [],
+      "filename": "items-skin_and_cases-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": [
+        "Redline"
+      ]
+    },
+    {
+      "coverage_id": "items-surf-01",
+      "kind": "item_type_gallery",
+      "item_ids": [
+        "csmc:surf_ramp"
+      ],
+      "recipe_ids": [],
+      "filename": "items-surf-01.png",
+      "width": 546,
+      "height": 148,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-ak47",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:ak47"
+      ],
+      "recipe_ids": [
+        "csmc:ak47"
+      ],
+      "filename": "recipe-ak47.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-aug",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:aug"
+      ],
+      "recipe_ids": [
+        "csmc:aug"
+      ],
+      "filename": "recipe-aug.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-awp",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:awp"
+      ],
+      "recipe_ids": [
+        "csmc:awp"
+      ],
+      "filename": "recipe-awp.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-bayonet",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:bayonet"
+      ],
+      "recipe_ids": [
+        "csmc:bayonet"
+      ],
+      "filename": "recipe-bayonet.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-bizon",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:bizon"
+      ],
+      "recipe_ids": [
+        "csmc:bizon"
+      ],
+      "filename": "recipe-bizon.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-c4",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:c4"
+      ],
+      "recipe_ids": [
+        "csmc:c4"
+      ],
+      "filename": "recipe-c4.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-cz75a",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:cz75a"
+      ],
+      "recipe_ids": [
+        "csmc:cz75a"
+      ],
+      "filename": "recipe-cz75a.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-deagle",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:deagle"
+      ],
+      "recipe_ids": [
+        "csmc:deagle"
+      ],
+      "filename": "recipe-deagle.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-decoy",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:decoy"
+      ],
+      "recipe_ids": [
+        "csmc:decoy"
+      ],
+      "filename": "recipe-decoy.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-defuse_kit",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:defuse_kit"
+      ],
+      "recipe_ids": [
+        "csmc:defuse_kit"
+      ],
+      "filename": "recipe-defuse_kit.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-elite",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:elite"
+      ],
+      "recipe_ids": [
+        "csmc:elite"
+      ],
+      "filename": "recipe-elite.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-famas",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:famas"
+      ],
+      "recipe_ids": [
+        "csmc:famas"
+      ],
+      "filename": "recipe-famas.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-fiveseven",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:fiveseven"
+      ],
+      "recipe_ids": [
+        "csmc:fiveseven"
+      ],
+      "filename": "recipe-fiveseven.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-flashbang",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:flashbang"
+      ],
+      "recipe_ids": [
+        "csmc:flashbang"
+      ],
+      "filename": "recipe-flashbang.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-g3sg1",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:g3sg1"
+      ],
+      "recipe_ids": [
+        "csmc:g3sg1"
+      ],
+      "filename": "recipe-g3sg1.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-galilar",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:galilar"
+      ],
+      "recipe_ids": [
+        "csmc:galilar"
+      ],
+      "filename": "recipe-galilar.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-glock",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:glock"
+      ],
+      "recipe_ids": [
+        "csmc:glock"
+      ],
+      "filename": "recipe-glock.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-healthshot",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:healthshot"
+      ],
+      "recipe_ids": [
+        "csmc:healthshot"
+      ],
+      "filename": "recipe-healthshot.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-hegrenade",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:hegrenade"
+      ],
+      "recipe_ids": [
+        "csmc:hegrenade"
+      ],
+      "filename": "recipe-hegrenade.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-hkp2000",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:hkp2000"
+      ],
+      "recipe_ids": [
+        "csmc:hkp2000"
+      ],
+      "filename": "recipe-hkp2000.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-incgrenade",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:incgrenade"
+      ],
+      "recipe_ids": [
+        "csmc:incgrenade"
+      ],
+      "filename": "recipe-incgrenade.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-inventory_weapon_case",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:inventory_weapon_case"
+      ],
+      "recipe_ids": [
+        "csmc:inventory_weapon_case"
+      ],
+      "filename": "recipe-inventory_weapon_case.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-kevlar_helmet",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:kevlar_helmet"
+      ],
+      "recipe_ids": [
+        "csmc:kevlar_helmet"
+      ],
+      "filename": "recipe-kevlar_helmet.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-kevlar_vest",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:kevlar_vest"
+      ],
+      "recipe_ids": [
+        "csmc:kevlar_vest"
+      ],
+      "filename": "recipe-kevlar_vest.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife"
+      ],
+      "recipe_ids": [
+        "csmc:knife"
+      ],
+      "filename": "recipe-knife.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_butterfly",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_butterfly"
+      ],
+      "recipe_ids": [
+        "csmc:knife_butterfly"
+      ],
+      "filename": "recipe-knife_butterfly.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_canis",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_canis"
+      ],
+      "recipe_ids": [
+        "csmc:knife_canis"
+      ],
+      "filename": "recipe-knife_canis.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_cord",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_cord"
+      ],
+      "recipe_ids": [
+        "csmc:knife_cord"
+      ],
+      "filename": "recipe-knife_cord.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_css",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_css"
+      ],
+      "recipe_ids": [
+        "csmc:knife_css"
+      ],
+      "filename": "recipe-knife_css.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_falchion",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_falchion"
+      ],
+      "recipe_ids": [
+        "csmc:knife_falchion"
+      ],
+      "filename": "recipe-knife_falchion.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_flip",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_flip"
+      ],
+      "recipe_ids": [
+        "csmc:knife_flip"
+      ],
+      "filename": "recipe-knife_flip.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_gut",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_gut"
+      ],
+      "recipe_ids": [
+        "csmc:knife_gut"
+      ],
+      "filename": "recipe-knife_gut.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_gypsy_jackknife",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_gypsy_jackknife"
+      ],
+      "recipe_ids": [
+        "csmc:knife_gypsy_jackknife"
+      ],
+      "filename": "recipe-knife_gypsy_jackknife.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_karambit",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_karambit"
+      ],
+      "recipe_ids": [
+        "csmc:knife_karambit"
+      ],
+      "filename": "recipe-knife_karambit.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_kukri",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_kukri"
+      ],
+      "recipe_ids": [
+        "csmc:knife_kukri"
+      ],
+      "filename": "recipe-knife_kukri.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_m9_bayonet",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_m9_bayonet"
+      ],
+      "recipe_ids": [
+        "csmc:knife_m9_bayonet"
+      ],
+      "filename": "recipe-knife_m9_bayonet.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_outdoor",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_outdoor"
+      ],
+      "recipe_ids": [
+        "csmc:knife_outdoor"
+      ],
+      "filename": "recipe-knife_outdoor.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_push",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_push"
+      ],
+      "recipe_ids": [
+        "csmc:knife_push"
+      ],
+      "filename": "recipe-knife_push.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_skeleton",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_skeleton"
+      ],
+      "recipe_ids": [
+        "csmc:knife_skeleton"
+      ],
+      "filename": "recipe-knife_skeleton.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_stiletto",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_stiletto"
+      ],
+      "recipe_ids": [
+        "csmc:knife_stiletto"
+      ],
+      "filename": "recipe-knife_stiletto.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_survival_bowie",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_survival_bowie"
+      ],
+      "recipe_ids": [
+        "csmc:knife_survival_bowie"
+      ],
+      "filename": "recipe-knife_survival_bowie.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_t",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_t"
+      ],
+      "recipe_ids": [
+        "csmc:knife_t"
+      ],
+      "filename": "recipe-knife_t.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_tactical",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_tactical"
+      ],
+      "recipe_ids": [
+        "csmc:knife_tactical"
+      ],
+      "filename": "recipe-knife_tactical.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_ursus",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_ursus"
+      ],
+      "recipe_ids": [
+        "csmc:knife_ursus"
+      ],
+      "filename": "recipe-knife_ursus.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-knife_widowmaker",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_widowmaker"
+      ],
+      "recipe_ids": [
+        "csmc:knife_widowmaker"
+      ],
+      "filename": "recipe-knife_widowmaker.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-leather_handwraps",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:leather_handwraps"
+      ],
+      "recipe_ids": [
+        "csmc:leather_handwraps"
+      ],
+      "filename": "recipe-leather_handwraps.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-m14",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:m14"
+      ],
+      "recipe_ids": [
+        "csmc:m14"
+      ],
+      "filename": "recipe-m14.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-m249",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:m249"
+      ],
+      "recipe_ids": [
+        "csmc:m249"
+      ],
+      "filename": "recipe-m249.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-m4a1",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:m4a1"
+      ],
+      "recipe_ids": [
+        "csmc:m4a1"
+      ],
+      "filename": "recipe-m4a1.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-m4a1_silencer",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:m4a1_silencer"
+      ],
+      "recipe_ids": [
+        "csmc:m4a1_silencer"
+      ],
+      "filename": "recipe-m4a1_silencer.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-mac10",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:mac10"
+      ],
+      "recipe_ids": [
+        "csmc:mac10"
+      ],
+      "filename": "recipe-mac10.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-mag7",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:mag7"
+      ],
+      "recipe_ids": [
+        "csmc:mag7"
+      ],
+      "filename": "recipe-mag7.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-molotov",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:molotov"
+      ],
+      "recipe_ids": [
+        "csmc:molotov"
+      ],
+      "filename": "recipe-molotov.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-motorcycle_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:motorcycle_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:motorcycle_gloves"
+      ],
+      "filename": "recipe-motorcycle_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-mp5sd",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:mp5sd"
+      ],
+      "recipe_ids": [
+        "csmc:mp5sd"
+      ],
+      "filename": "recipe-mp5sd.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-mp7",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:mp7"
+      ],
+      "recipe_ids": [
+        "csmc:mp7"
+      ],
+      "filename": "recipe-mp7.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-mp9",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:mp9"
+      ],
+      "recipe_ids": [
+        "csmc:mp9"
+      ],
+      "filename": "recipe-mp9.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-negev",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:negev"
+      ],
+      "recipe_ids": [
+        "csmc:negev"
+      ],
+      "filename": "recipe-negev.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-nova",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:nova"
+      ],
+      "recipe_ids": [
+        "csmc:nova"
+      ],
+      "filename": "recipe-nova.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-p250",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:p250"
+      ],
+      "recipe_ids": [
+        "csmc:p250"
+      ],
+      "filename": "recipe-p250.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-p90",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:p90"
+      ],
+      "recipe_ids": [
+        "csmc:p90"
+      ],
+      "filename": "recipe-p90.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-pistol_ammo",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:pistol_ammo"
+      ],
+      "recipe_ids": [
+        "csmc:pistol_ammo"
+      ],
+      "filename": "recipe-pistol_ammo.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-revolver",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:revolver"
+      ],
+      "recipe_ids": [
+        "csmc:revolver"
+      ],
+      "filename": "recipe-revolver.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-rifle_ammo",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:rifle_ammo"
+      ],
+      "recipe_ids": [
+        "csmc:rifle_ammo"
+      ],
+      "filename": "recipe-rifle_ammo.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-sawedoff",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sawedoff"
+      ],
+      "recipe_ids": [
+        "csmc:sawedoff"
+      ],
+      "filename": "recipe-sawedoff.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-scar20",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:scar20"
+      ],
+      "recipe_ids": [
+        "csmc:scar20"
+      ],
+      "filename": "recipe-scar20.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-sg556",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sg556"
+      ],
+      "recipe_ids": [
+        "csmc:sg556"
+      ],
+      "filename": "recipe-sg556.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-shotgun_shells",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:shotgun_shells"
+      ],
+      "recipe_ids": [
+        "csmc:shotgun_shells"
+      ],
+      "filename": "recipe-shotgun_shells.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-slick_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:slick_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:slick_gloves"
+      ],
+      "filename": "recipe-slick_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-smokegrenade",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:smokegrenade"
+      ],
+      "recipe_ids": [
+        "csmc:smokegrenade"
+      ],
+      "filename": "recipe-smokegrenade.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-sniper_ammo",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sniper_ammo"
+      ],
+      "recipe_ids": [
+        "csmc:sniper_ammo"
+      ],
+      "filename": "recipe-sniper_ammo.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-specialist_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:specialist_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:specialist_gloves"
+      ],
+      "filename": "recipe-specialist_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-sporty_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sporty_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:sporty_gloves"
+      ],
+      "filename": "recipe-sporty_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-ssg08",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:ssg08"
+      ],
+      "recipe_ids": [
+        "csmc:ssg08"
+      ],
+      "filename": "recipe-ssg08.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-studded_bloodhound_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:studded_bloodhound_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:studded_bloodhound_gloves"
+      ],
+      "filename": "recipe-studded_bloodhound_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-studded_brokenfang_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:studded_brokenfang_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:studded_brokenfang_gloves"
+      ],
+      "filename": "recipe-studded_brokenfang_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-studded_hydra_gloves",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:studded_hydra_gloves"
+      ],
+      "recipe_ids": [
+        "csmc:studded_hydra_gloves"
+      ],
+      "filename": "recipe-studded_hydra_gloves.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-surf_ramp",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:surf_ramp"
+      ],
+      "recipe_ids": [
+        "csmc:surf_ramp"
+      ],
+      "filename": "recipe-surf_ramp.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-taser",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:taser"
+      ],
+      "recipe_ids": [
+        "csmc:taser"
+      ],
+      "filename": "recipe-taser.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-tec9",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:tec9"
+      ],
+      "recipe_ids": [
+        "csmc:tec9"
+      ],
+      "filename": "recipe-tec9.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-ump45",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:ump45"
+      ],
+      "recipe_ids": [
+        "csmc:ump45"
+      ],
+      "filename": "recipe-ump45.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-usp_silencer",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:usp_silencer"
+      ],
+      "recipe_ids": [
+        "csmc:usp_silencer"
+      ],
+      "filename": "recipe-usp_silencer.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-weapon_case",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:weapon_case"
+      ],
+      "recipe_ids": [
+        "csmc:weapon_case"
+      ],
+      "filename": "recipe-weapon_case.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "recipe-xm1014",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:xm1014"
+      ],
+      "recipe_ids": [
+        "csmc:xm1014"
+      ],
+      "filename": "recipe-xm1014.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": []
+    },
+    {
+      "coverage_id": "skin-apply-firearm",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:ak47",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-apply-firearm.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Redline"
+      ]
+    },
+    {
+      "coverage_id": "skin-swap-firearm",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:ak47",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-swap-firearm.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Asiimov",
+        "Redline"
+      ]
+    },
+    {
+      "coverage_id": "skin-remove-firearm",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:ak47",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-remove-firearm.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Redline"
+      ]
+    },
+    {
+      "coverage_id": "skin-apply-knife",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_butterfly",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-apply-knife.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Fade"
+      ]
+    },
+    {
+      "coverage_id": "skin-swap-knife",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_butterfly",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-swap-knife.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Fade",
+        "Slaughter"
+      ]
+    },
+    {
+      "coverage_id": "skin-remove-knife",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:knife_butterfly",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-remove-knife.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Fade"
+      ]
+    },
+    {
+      "coverage_id": "skin-apply-glove",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sporty_gloves",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-apply-glove.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Amphibious"
+      ]
+    },
+    {
+      "coverage_id": "skin-swap-glove",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sporty_gloves",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-swap-glove.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Amphibious",
+        "Vice"
+      ]
+    },
+    {
+      "coverage_id": "skin-remove-glove",
+      "kind": "crafting_recipe",
+      "item_ids": [
+        "csmc:sporty_gloves",
+        "csmc:weapon_skin"
+      ],
+      "recipe_ids": [
+        "csmc:skin_crafting"
+      ],
+      "filename": "skin-remove-glove.png",
+      "width": 396,
+      "height": 211,
+      "finish_names": [
+        "Amphibious"
+      ]
+    },
+    {
+      "coverage_id": "hero-butterfly-fade",
+      "kind": "gameplay_scene",
+      "item_ids": [
+        "csmc:knife_butterfly",
+        "csmc:sporty_gloves"
+      ],
+      "recipe_ids": [],
+      "filename": "hero-butterfly-fade-amphibious.webp",
+      "width": 1920,
+      "height": 916,
+      "finish_names": [
+        "Amphibious",
+        "Fade"
+      ]
+    },
+    {
+      "coverage_id": "ak-redline-pve",
+      "kind": "gameplay_scene",
+      "item_ids": [
+        "csmc:ak47",
+        "csmc:slick_gloves"
+      ],
+      "recipe_ids": [],
+      "filename": "ak-redline-pve.webp",
+      "width": 1920,
+      "height": 916,
+      "finish_names": [
+        "Crimson Weave",
+        "Redline"
+      ]
+    },
+    {
+      "coverage_id": "awp-dragon-lore-meadow",
+      "kind": "gameplay_scene",
+      "item_ids": [
+        "csmc:awp",
+        "csmc:specialist_gloves"
+      ],
+      "recipe_ids": [],
+      "filename": "awp-dragon-lore-meadow.webp",
+      "width": 1920,
+      "height": 916,
+      "finish_names": [
+        "Dragon Lore",
+        "Emerald Web"
+      ]
+    }
+  ],
+  "source_capture_count": 114
+}

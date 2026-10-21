@@ -1,0 +1,16 @@
+{
+  "damage": 5,
+  "cycle_time_s": 0.05,
+  "magazine_size": 8,
+  "reload_time_s": 0.2,
+  "range": 256,
+  "penetration_power": 0,
+  "automatic": false,
+  "ammo_type": "rifle",
+  "max_speed": 250,
+  "spread_base": 10,
+  "inaccuracy": {"stand": 10, "crouch": 10, "jump": 10, "fire": 4},
+  "recovery": {"stand": 1000000},
+  "zoom": {"levels": [40, 10], "time_s": 0.05, "times_s": [0.03, 0.08, 0.1], "unzoom_after_shot": true},
+  "scoped": {"max_speed": 100, "cycle_time_s": 0.3, "spread_base": 0, "inaccuracy": {"stand": 0, "crouch": 0, "jump": 0, "fire": 0.02}}
+}

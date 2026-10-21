@@ -1,0 +1,29 @@
+<!-- kv3 self-authored parser fixture; not exported game data -->
+{
+    // Fictional test weapon; values intentionally differ from real weapons.
+    training_base = {
+        m_nDamage = 17
+        m_iMaxClip1 = 11
+        m_flCycleTime = [ 0.23, 0.46 ]
+        m_flInaccuracyStand = [ 0.012, 0.024 ]
+        m_flRecoilAngle = [ 12.0, 24.0 ]
+        m_nRecoilSeed = 4321
+        m_bIsFullAuto = false
+        m_bMeleeWeapon = false
+        m_nPrimaryReserveAmmoMax = 9999
+    }
+    weapon_practice_prefab = { _base = "training_base" m_flArmorRatio = 1.3 }
+    weapon_practice = {
+        _base = "weapon_practice_prefab"
+        m_nDamage = 19
+        m_szWorldModel = resource_name:"self-authored/practice.vmdl"
+        m_aShootSounds = { single = soundevent:"Test.Practice" }
+        description = "A quote: \" and unicode \u0041"
+        /* comments may sit between fields */
+        optional = null
+        signed = -1.25e-2
+        flags = [ true, false, null ]
+    }
+    weapon_melee = { m_iMaxClip1 = 2 m_bMeleeWeapon = true }
+    weapon_grenade = { m_iMaxClip1 = 0 }
+}

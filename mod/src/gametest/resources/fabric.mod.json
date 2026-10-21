@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "csmc-test",
+  "version": "1.0.0",
+  "name": "CSMC GameTests",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.csmc.ballistics.ScopeGameTests"],
+    "fabric-gametest": [
+      "dev.csmc.ballistics.MovementInaccuracyGameTests",
+      "dev.csmc.movement.MovementGameTests",
+      "dev.csmc.ballistics.BallisticsGameTests",
+      "dev.csmc.ballistics.ArmorGameTests",
+      "dev.csmc.data.SurfaceTableGameTests",
+      "dev.csmc.data.RecipeGameTests",
+      "dev.csmc.data.WeaponBalanceGameTests",
+      "dev.csmc.GunSystemGameTests",
+      "dev.csmc.ballistics.ScopeGameTests",
+      "dev.csmc.skin.SkinGameplayGameTests",
+      "dev.csmc.skin.LoadoutCaseGameTests",
+      "dev.csmc.ballistics.BlockDamageGameTests",
+      "dev.csmc.ballistics.BlockDestructionProbeGameTests",
+      "dev.csmc.grenade.GrenadeGameTests",
+      "dev.csmc.melee.KnifeGameTests",
+      "dev.csmc.gloves.GloveGameTests",
+      "dev.csmc.equipment.EquipmentGameTests",
+      "dev.csmc.surf.SurfRampGameTests",
+      "dev.csmc.surf.SurfCombatGameTests",
+      "dev.csmc.surf.importer.SurfImportGameTests"
+    ]
+  },
+  "depends": {
+    "csmc": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}

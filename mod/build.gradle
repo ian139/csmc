@@ -1,0 +1,72 @@
+plugins {
+    id 'fabric-loom' version '1.11.8'
+}
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        csmc {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+    runs {
+        client2 {
+            client()
+            name 'Second LAN Client'
+            runDir 'run-client2'
+            programArgs '--username', 'CsmcPlayer2'
+        }
+        lanServer {
+            server()
+            name 'LAN Test Server'
+            runDir 'run-server'
+            programArgs 'nogui'
+        }
+        lanClient1 {
+            client()
+            name 'LAN Test Client 1'
+            runDir 'run'
+            programArgs '--username', 'CsmcPlayer1', '--quickPlayMultiplayer', 'localhost:25565'
+        }
+        lanClient2 {
+            client()
+            name 'LAN Test Client 2'
+            runDir 'run-client2'
+            programArgs '--username', 'CsmcPlayer2', '--quickPlayMultiplayer', 'localhost:25565'
+        }
+    }
+}
+
+repositories { mavenCentral() }
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    testImplementation 'junit:junit:4.13.2'
+}
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'csmc-test'
+        enableGameTests = true
+        enableClientGameTests = false
+        eula = true
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+tasks.withType(JavaCompile).configureEach { options.release = 21 }
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}

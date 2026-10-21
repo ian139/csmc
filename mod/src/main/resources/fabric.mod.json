@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "csmc",
+  "version": "${version}",
+  "name": "CSMC",
+  "description": "Server-authoritative CS-inspired guns, skins and throwable grenades for Minecraft LAN play, using locally exported CS2 assets.",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.csmc.CsmcMod", "dev.csmc.thirdperson.ThirdPersonState", "dev.csmc.movement.CsMovement", "dev.csmc.surf.Surf"],
+    "client": ["dev.csmc.client.CsmcClient", "dev.csmc.client.render.CachedGunRendering", "dev.csmc.client.sound.CachedGunSounds", "dev.csmc.client.grenade.GrenadeClient", "dev.csmc.client.render.CaseTextures", "dev.csmc.client.armor.KevlarArmorClient", "dev.csmc.client.thirdperson.ThirdPersonClient", "dev.csmc.client.movement.CsMovementClient", "dev.csmc.client.surf.SurfClient"]
+  },
+  "mixins": [
+    "csmc.mixins.json",
+    "csmc.gloves.mixins.json",
+    { "config": "csmc.client.mixins.json", "environment": "client" },
+    { "config": "csmc.grenade.client.mixins.json", "environment": "client" },
+    { "config": "csmc.thirdperson.client.mixins.json", "environment": "client" },
+    "csmc.movement.mixins.json",
+    { "config": "csmc.movement.client.mixins.json", "environment": "client" },
+    "csmc.surf.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
